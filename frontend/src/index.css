@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background-color: #F0F7FF; color: #1F2937; }
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-secondary text-primary px-4 py-2 rounded-lg font-semibold hover:bg-blue-200 transition-all duration-200;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-blue-50 p-6;
+  }
+  .input {
+    @apply w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all;
+  }
+  .badge-easy { @apply bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium; }
+  .badge-medium { @apply bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-medium; }
+  .badge-hard { @apply bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-medium; }
+}

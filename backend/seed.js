@@ -27,7 +27,7 @@ const User = mongoose.model('User', userSchema);
 const users = [
   {
     name: 'Admin User',
-    email: 'admin@gmail.com',
+    email: 'admin@school.com',
     password: 'admin123',
     role: 'admin'
   },
@@ -42,15 +42,8 @@ const users = [
     email: 'mansi@123.com',
     password: 'student123',
     role: 'student',
-    rollNo: '235145',
+    rollNo: 'CS001',
     class: 'SE-A'
-  },
-  {
-    name:'Sachine padwal',
-    email: 'sachin@gmail.com',
-    password: 'sachin123',
-    role: 'teacher'
-
   }
 ];
 

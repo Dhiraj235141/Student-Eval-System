@@ -1,3 +1,6 @@
+
+hii i representing my team 
+
 # 🎓 Student Evaluation System
 
 An AI-powered student evaluation platform with tests, assignments, attendance tracking, and smart weak-topic suggestions.

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Users, Plus, ToggleLeft, ToggleRight, Edit2, BookOpen, X, Check } from 'lucide-react';
+import { Users, Plus, ToggleLeft, ToggleRight, Edit2, BookOpen, X, Check, Trash2 } from 'lucide-react';
 
 export default function AdminTeachers() {
   const [teachers, setTeachers] = useState([]);
@@ -53,6 +53,18 @@ export default function AdminTeachers() {
     await axios.put(`/admin/users/${id}/toggle`);
     fetchTeachers();
     toast.success('Status updated');
+  };
+
+  const deleteTeacher = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this faculty member? This cannot be undone and will detach them from their subjects.')) return;
+    try {
+      await axios.delete(`/admin/users/${id}`);
+      toast.success('Faculty permanently deleted');
+      fetchTeachers();
+      axios.get('/admin/subjects').then(r => setSubjects(r.data.subjects));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete faculty');
+    }
   };
 
   const assignSubject = async (teacherId, subjectId) => {
@@ -133,6 +145,9 @@ export default function AdminTeachers() {
                 <div className="h-4 w-px bg-gray-200 mx-1"></div>
                 <button onClick={() => startEdit(t)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Faculty">
                   <Edit2 size={16} />
+                </button>
+                <button onClick={() => deleteTeacher(t._id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Faculty">
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>

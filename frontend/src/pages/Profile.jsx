@@ -6,7 +6,7 @@ import { User, Mail, Hash, BookOpen, Lock, Eye, EyeOff, Save, GraduationCap, Shi
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
-  
+
   // Password state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -96,19 +96,19 @@ export default function Profile() {
                 <X size={18} />
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Full Name</label>
-                <input className="input w-full" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+                <input className="input w-full" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Email</label>
-                <input type="email" className="input w-full" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
+                <input type="email" className="input w-full" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
               </div>
               <div className="sm:col-span-2">
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Department</label>
-                <input className="input w-full" value={form.department} onChange={e => setForm({...form, department: e.target.value})} required />
+                <input className="input w-full" value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} required />
               </div>
             </div>
             <div className="pt-2 flex justify-end">

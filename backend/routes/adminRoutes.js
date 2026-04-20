@@ -8,7 +8,9 @@ const {
   getAnnouncements,
   createAnnouncement,
   updateAnnouncement,
-  deleteAnnouncement
+  deleteAnnouncement,
+  deleteUser,
+  deleteSubject
 } = require('../controllers/adminController');
 
 router.use(protect, authorize('admin'));
@@ -17,10 +19,12 @@ router.get('/stats', getDashboardStats);
 router.post('/users', createUser);
 router.get('/users', getAllUsers);
 router.put('/users/:id', updateUser);
+router.delete('/users/:id', deleteUser);
 router.put('/users/:id/toggle', toggleUserStatus);
 router.post('/subjects', createSubject);
 router.get('/subjects', getAllSubjects);
 router.put('/subjects/:id', updateSubject);
+router.delete('/subjects/:id', deleteSubject);
 router.post('/enroll', enrollStudent);
 router.post('/assign-subject', assignSubjectToTeacher);
 router.post('/remove-subject', removeSubjectFromTeacher);

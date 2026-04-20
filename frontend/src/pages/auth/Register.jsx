@@ -8,10 +8,12 @@ const BRANCHES = ['Computer Science', 'Information Technology', 'Electronics', '
 const YEARS = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
 
 export default function Register() {
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
     rollNo: '', year: '', branch: '', division: ''
   });
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,18 @@ export default function Register() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
+  const handleOtpChange = (index, value) => {
+    if (isNaN(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    // Auto-focus next input
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`).focus();
+    }
+  };
+
+  const handleSubmitInfo = async (e) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       toast.error('Passwords do not match!');
@@ -43,10 +56,32 @@ export default function Register() {
         class: classStr,
         role: 'student'
       });
-      toast.success('Account created! Please login.');
-      navigate('/login');
+      toast.success('OTP sent to your email! Please verify.');
+      setStep(2);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    const otpString = otp.join('');
+    if (otpString.length !== 6) {
+      toast.error('Please enter the 6-digit OTP');
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post('/auth/verify-registration-otp', {
+        email: form.email,
+        otp: otpString
+      });
+      toast.success('Account successfully verified! Please login.');
+      navigate('/login');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Invalid or expired OTP');
     } finally {
       setLoading(false);
     }
@@ -73,10 +108,12 @@ export default function Register() {
 
         {/* Right form */}
         <div className="flex-1 px-8 py-8 overflow-y-auto">
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">Create Account</h1>
-          <p className="text-sm text-gray-400 mb-6">Register as a student</p>
+          {step === 1 ? (
+            <>
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">Create Account</h1>
+              <p className="text-sm text-gray-400 mb-6">Register as a student</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmitInfo} className="space-y-4">
             {/* Name */}
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block"><span className="text-red-500">*</span> Full Name</label>
@@ -168,7 +205,7 @@ export default function Register() {
 
             <button type="submit" disabled={loading || form.password !== form.confirmPassword}
               className="w-full btn-primary py-3 text-base rounded-xl mt-2">
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Sending OTP...' : 'Send OTP to Email'}
             </button>
 
             <p className="text-center text-sm text-gray-400">
@@ -176,6 +213,57 @@ export default function Register() {
               <Link to="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
             </p>
           </form>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full max-w-sm mx-auto">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                <Mail size={32} className="text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h1>
+              <p className="text-sm text-gray-500 text-center mb-8">
+                We've sent a 6-digit verification code to <br/>
+                <span className="font-semibold text-gray-800">{form.email}</span>
+              </p>
+
+              <form onSubmit={handleVerifyOTP} className="w-full space-y-6">
+                <div className="flex justify-between gap-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      maxLength={1}
+                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Backspace' && !digit && index > 0) {
+                          document.getElementById(`otp-${index - 1}`).focus();
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    type="submit"
+                    disabled={loading || otp.join('').length !== 6}
+                    className="w-full btn-primary py-3.5 text-base rounded-xl font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-70"
+                  >
+                    {loading ? 'Verifying...' : 'Verify Email & Finish'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="w-full py-3 text-sm text-gray-500 font-medium hover:text-gray-800 transition-colors"
+                  >
+                    Oops, correct email address
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

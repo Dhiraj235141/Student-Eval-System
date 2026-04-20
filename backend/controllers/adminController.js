@@ -244,3 +244,43 @@ exports.deleteAnnouncement = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// @desc    Permanently delete a user
+// @route   DELETE /api/admin/users/:id
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    // If it's a teacher, remove them from all subjects first
+    if (user.role === 'teacher') {
+      await Subject.updateMany({ teacher: user._id }, { teacher: null });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'User permanently deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// @desc    Permanently delete a subject
+// @route   DELETE /api/admin/subjects/:id
+exports.deleteSubject = async (req, res) => {
+  try {
+    const subject = await Subject.findById(req.params.id);
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
+
+    // Untether from teachers
+    if (subject.teacher) {
+      await User.findByIdAndUpdate(subject.teacher, { $pull: { subjects: subject._id } });
+    }
+    // Untether from students
+    await User.updateMany({ enrolledSubjects: subject._id }, { $pull: { enrolledSubjects: subject._id } });
+
+    await Subject.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Subject permanently deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

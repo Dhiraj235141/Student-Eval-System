@@ -13,7 +13,12 @@ exports.createNotification = async ({ recipientId, senderId, type, title, messag
 // Helper to notify all students in a subject
 exports.notifySubjectStudents = async ({ subjectId, senderId, type, title, message, link, metadata }) => {
   try {
-    const students = await User.find({ enrolledSubjects: subjectId, role: 'student', isActive: true }, '_id');
+    const Subject = require('../models/Subject');
+    const targetSubject = await Subject.findById(subjectId);
+    if (!targetSubject) return;
+
+    // Find all students whose physical 'class' string exactly matches the target subject's 'class' string.
+    const students = await User.find({ class: targetSubject.class, role: 'student', isActive: true }, '_id');
     const notifications = students.map(s => ({
       recipient: s._id, sender: senderId, type, title, message, link, metadata
     }));

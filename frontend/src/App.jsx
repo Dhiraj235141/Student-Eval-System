@@ -8,6 +8,8 @@ import LoadingScreen from './components/LoadingScreen';
 // Auth Pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Landing
 import LandingPage from './pages/LandingPage';
@@ -63,6 +65,7 @@ function AppRoutes() {
       {/* Auth */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to={`/${user.role}`} replace />} />
       <Route path="/register" element={!user ? <Register /> : <Navigate to={`/${user.role}`} replace />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* Admin */}
       <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
@@ -96,20 +99,23 @@ function AppRoutes() {
 
 export default function App() {
   const [loadingDone, setLoadingDone] = useState(false);
+  const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
   return (
-    <AuthProvider>
-      {!loadingDone && <LoadingScreen onDone={() => setLoadingDone(true)} />}
-      <BrowserRouter>
-        <AppRoutes />
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: { borderRadius: '12px', fontSize: '14px', background: '#1e293b', color: '#f1f5f9' }
-          }}
-        />
-      </BrowserRouter>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={clientId}>
+      <AuthProvider>
+        {!loadingDone && <LoadingScreen onDone={() => setLoadingDone(true)} />}
+        <BrowserRouter>
+          <AppRoutes />
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: { borderRadius: '12px', fontSize: '14px', background: '#1e293b', color: '#f1f5f9' }
+            }}
+          />
+        </BrowserRouter>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }

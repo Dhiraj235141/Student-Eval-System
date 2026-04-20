@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { GraduationCap, Plus, ToggleLeft, ToggleRight, Search } from 'lucide-react';
+import { GraduationCap, Plus, ToggleLeft, ToggleRight, Search, Trash2 } from 'lucide-react';
 
 const YEARS = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
 const BRANCHES = ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Chemical', 'Other'];
@@ -40,6 +40,17 @@ export default function AdminStudents() {
     await axios.put(`/admin/users/${id}/toggle`);
     fetchStudents();
     toast.success('Status updated');
+  };
+
+  const deleteStudent = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this student? This cannot be undone.')) return;
+    try {
+      await axios.delete(`/admin/users/${id}`);
+      toast.success('Student permanently deleted');
+      fetchStudents();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete student');
+    }
   };
 
   const filtered = students.filter(u => {
@@ -133,7 +144,16 @@ export default function AdminStudents() {
                 <td className="py-3 text-gray-400 text-xs">{u.year || '-'}</td>
                 <td className="py-3 text-gray-400 text-xs">{u.branch || '-'}</td>
                 <td className="py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}`}>{u.isActive ? 'Active' : 'Inactive'}</span></td>
-                <td className="py-3"><button onClick={() => toggleUser(u._id)}>{u.isActive ? <ToggleRight size={22} className="text-blue-600" /> : <ToggleLeft size={22} className="text-gray-300" />}</button></td>
+                <td className="py-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => toggleUser(u._id)} title="Toggle Status">
+                      {u.isActive ? <ToggleRight size={22} className="text-blue-600 hover:text-blue-700" /> : <ToggleLeft size={22} className="text-gray-300 hover:text-gray-400" />}
+                    </button>
+                    <button onClick={() => deleteStudent(u._id)} title="Delete Student" className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-gray-400">No students found</td></tr>}

@@ -52,6 +52,17 @@ export default function AdminSubjects() {
     setShowForm(true);
   };
 
+  const deleteSubject = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this subject? It will be removed from all assigned teachers and enrolled students.')) return;
+    try {
+      await axios.delete(`/admin/subjects/${id}`);
+      toast.success('Subject permanently deleted');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete subject');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="card">
@@ -123,8 +134,11 @@ export default function AdminSubjects() {
               ) : (
                 <span className="text-xs bg-gray-50 text-gray-400 px-2 py-1 rounded-lg">Unassigned</span>
               )}
-              <button onClick={() => startEdit(s)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              <button onClick={() => startEdit(s)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Subject">
                 <Edit2 size={15} />
+              </button>
+              <button onClick={() => deleteSubject(s._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Subject">
+                <Trash2 size={15} />
               </button>
             </div>
           </div>

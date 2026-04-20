@@ -25,6 +25,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 
+
 // Health check
 app.get('/', (req, res) => res.json({ message: 'Student Evaluation System API Running! 🎓' }));
 

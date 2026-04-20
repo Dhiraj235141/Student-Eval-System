@@ -10,6 +10,8 @@ import {
 import NotificationPanel from './NotificationPanel';
 import ProfilePanel from './ProfilePanel';
 
+
+
 const navItems = {
   admin: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
@@ -209,6 +211,7 @@ export default function Sidebar({ children }) {
             {children}
           </main>
         </div>
+    
       </div>
 
       {/* Profile panel */}

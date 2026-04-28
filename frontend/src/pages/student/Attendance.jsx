@@ -123,7 +123,7 @@ export default function StudentAttendance() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Secret Code (from Teacher)</label>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Secret Code (from Faculty)</label>
             <input className="input text-center text-2xl font-bold tracking-widest uppercase" maxLength={8}
               placeholder="Enter Code" value={codeForm.code}
               onChange={e => setCodeForm({ ...codeForm, code: e.target.value.toUpperCase() })} />
@@ -135,7 +135,7 @@ export default function StudentAttendance() {
           </button>
 
           <p className="text-xs text-gray-400 text-center">
-            The code is provided by your teacher and is valid for a limited time only.
+            The code is provided by your faculty and is valid for a limited time only.
           </p>
         </div>
       )}

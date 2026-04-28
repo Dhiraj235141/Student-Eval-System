@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, BookOpen, ClipboardList, Users, BarChart2,
   FileText, LogOut, Menu, GraduationCap, ChevronRight,
-  Calendar, Brain, Award, Megaphone, Shield
+  Calendar, Brain, Award, Megaphone, Shield, MessageSquare
 } from 'lucide-react';
 import NotificationPanel from './NotificationPanel';
 import ProfilePanel from './ProfilePanel';
@@ -13,20 +13,22 @@ import ProfilePanel from './ProfilePanel';
 const navItems = {
   admin: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
-    { label: 'Teachers', icon: Users, path: '/admin/teachers' },
+    { label: 'Faculty', icon: Users, path: '/admin/faculty' },
     { label: 'Students', icon: GraduationCap, path: '/admin/students' },
     { label: 'Subjects', icon: BookOpen, path: '/admin/subjects' },
     { label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
+    { label: 'Feedback', icon: MessageSquare, path: '/admin/feedback' },
   ],
-  teacher: [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/teacher' },
-    { label: 'My Subjects', icon: BookOpen, path: '/teacher/subjects' },
-    { label: 'Create Test', icon: ClipboardList, path: '/teacher/create-test' },
-    { label: 'Assignments', icon: FileText, path: '/teacher/assignments' },
-    { label: 'Results', icon: BarChart2, path: '/teacher/results' },
-    { label: 'Attendance', icon: Calendar, path: '/teacher/attendance' },
-    { label: 'Monthly Report', icon: Award, path: '/teacher/monthly-report' },
-    { label: 'Announcements', icon: Megaphone, path: '/teacher/announcements' },
+  faculty: [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/faculty' },
+    { label: 'My Subjects', icon: BookOpen, path: '/faculty/subjects' },
+    { label: 'Create Test', icon: ClipboardList, path: '/faculty/create-test' },
+    { label: 'Assignments', icon: FileText, path: '/faculty/assignments' },
+    { label: 'Results', icon: BarChart2, path: '/faculty/results' },
+    { label: 'Attendance', icon: Calendar, path: '/faculty/attendance' },
+    { label: 'Monthly Report', icon: Award, path: '/faculty/monthly-report' },
+    { label: 'Announcements', icon: Megaphone, path: '/faculty/announcements' },
+    { label: 'Feedback', icon: MessageSquare, path: '/faculty/feedback' },
   ],
   student: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/student' },
@@ -35,6 +37,7 @@ const navItems = {
     { label: 'My Results', icon: BarChart2, path: '/student/results' },
     { label: 'Attendance', icon: Calendar, path: '/student/attendance' },
     { label: 'Weak Topics', icon: Brain, path: '/student/weak-topics' },
+    { label: 'Feedback', icon: MessageSquare, path: '/student/feedback' },
   ]
 };
 
@@ -56,13 +59,13 @@ export default function Sidebar({ children }) {
 
   const roleColors = {
     admin: 'bg-gradient-to-br from-purple-500 to-purple-700',
-    teacher: 'bg-gradient-to-br from-blue-500 to-blue-700',
+    faculty: 'bg-gradient-to-br from-blue-500 to-blue-700',
     student: 'bg-gradient-to-br from-emerald-500 to-emerald-700'
   };
-  const roleLabels = { admin: 'Administrator', teacher: 'Teacher', student: 'Student' };
+  const roleLabels = { admin: 'Administrator', faculty: 'Faculty', student: 'Student' };
   const roleBadgeColors = {
     admin: 'bg-purple-100 text-purple-700',
-    teacher: 'bg-blue-100 text-blue-700',
+    faculty: 'bg-blue-100 text-blue-700',
     student: 'bg-emerald-100 text-emerald-700'
   };
 
@@ -70,8 +73,8 @@ export default function Sidebar({ children }) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={`flex items-center gap-3 p-5 border-b border-gray-100 ${collapsed ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-          <GraduationCap size={20} className="text-white" />
+        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 p-1">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
         {!collapsed && <span className="font-bold text-gray-800 text-sm leading-tight">Student Eval<br />System</span>}
       </div>
@@ -161,7 +164,13 @@ export default function Sidebar({ children }) {
           {/* Top bar */}
           <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
-              <button onClick={() => { setCollapsed(!collapsed); setMobileOpen(!mobileOpen); }}
+              <button onClick={() => {
+                if (window.innerWidth < 768) {
+                  setMobileOpen(true);
+                } else {
+                  setCollapsed(!collapsed);
+                }
+              }}
                 className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
                 <Menu size={18} />
               </button>

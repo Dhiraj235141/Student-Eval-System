@@ -82,7 +82,7 @@ export default function AdminStudents() {
       {showForm && (
         <form onSubmit={createStudent} className="card space-y-4">
           <h2 className="font-semibold text-gray-800">New Student</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input className="input" placeholder="Full Name *" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
             <input className="input" type="email" placeholder="Email *" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
             <input className="input" type="password" placeholder="Password *" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
@@ -105,16 +105,16 @@ export default function AdminStudents() {
 
       {/* Filters */}
       <div className="card">
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-40">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
             <Search size={16} className="text-gray-400 flex-shrink-0" />
             <input className="input py-1.5 flex-1" placeholder="Search by name or roll no..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="input text-sm py-1.5 w-40" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+          <select className="input text-sm py-1.5 w-full sm:w-40" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
             <option value="">All Years</option>
             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <select className="input text-sm py-1.5 w-44" value={filterBranch} onChange={e => setFilterBranch(e.target.value)}>
+          <select className="input text-sm py-1.5 w-full sm:w-44" value={filterBranch} onChange={e => setFilterBranch(e.target.value)}>
             <option value="">All Branches</option>
             {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
           </select>

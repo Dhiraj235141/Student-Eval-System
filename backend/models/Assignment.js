@@ -4,7 +4,7 @@ const assignmentSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
-  teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  faculty: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   questions: [{
     question: { type: String },
     type: { type: String, enum: ['mcq', 'short', 'long'], default: 'mcq' },

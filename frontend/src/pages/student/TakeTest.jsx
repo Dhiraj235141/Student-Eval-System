@@ -19,6 +19,7 @@ export default function TakeTest() {
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
   const tabSwitchCount = useRef(0);
+  const lastViolationAt = useRef(0);
   const timerRef = useRef(null);
 
   // Fetch subjects based on student's year from backend
@@ -26,33 +27,92 @@ export default function TakeTest() {
     axios.get('/student/subjects').then(res => setSubjects(res.data.subjects || [])).catch(() => {});
   }, []);
 
-  // Anti-cheat: tab visibility
-  useEffect(() => {
-    if (step !== 'taking') return;
-    const handleVisibilityChange = () => { if (document.hidden) handleCheat(); };
-    const handleBlur = () => handleCheat();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleBlur);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleBlur);
-    };
-  }, [step, warnings]);
+  const submitTest = useCallback(async (auto = false) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setLoading(true);
+    try {
+      const answersArray = test.questions.map((_, i) => answers[i] ?? -1);
+      const res = await axios.post('/student/submit-test', {
+        testId: test.id, answers: answersArray,
+        tabSwitchCount: tabSwitchCount.current, autoSubmitted: auto
+      });
+      setResult(res.data.result); setStep('submitted');
+      toast.success('Test submitted successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Submission failed');
+    } finally { setLoading(false); }
+  }, [test, answers]);
 
   const handleCheat = useCallback(() => {
+    const now = Date.now();
+    if (now - lastViolationAt.current < 2000) return; // Throttle violations
+    lastViolationAt.current = now;
+
     tabSwitchCount.current += 1;
     const count = tabSwitchCount.current;
     if (count === 1) {
       setWarnings(1); setWarningMsg('⚠️ Warning 1/2: Please stay on the test page!');
-      setShowWarning(true); setTimeout(() => setShowWarning(false), 4000);
+      setShowWarning(true);
     } else if (count === 2) {
       setWarnings(2); setWarningMsg('🚨 Final Warning 2/2: Next violation will auto-submit!');
-      setShowWarning(true); setTimeout(() => setShowWarning(false), 4000);
+      setShowWarning(true);
     } else if (count >= 3) {
       setWarningMsg('❌ Test auto-submitted due to tab switching!');
       setShowWarning(true); submitTest(true);
     }
-  }, []);
+  }, [submitTest]);
+
+  // Anti-cheat: tab visibility and copy prevention
+  useEffect(() => {
+    if (step !== 'taking') return;
+
+    const handleVisibilityChange = () => { if (document.hidden) handleCheat(); };
+    const handleBlur = () => handleCheat();
+    
+    // Prevent right-click
+    const handleContextMenu = (e) => e.preventDefault();
+    
+    // Prevent copy, cut, paste
+    const handleCopy = (e) => {
+      e.preventDefault();
+      toast.error('Copying is disabled during the test! 🚫');
+    };
+    
+    const handleKeyDown = (e) => {
+      // Prevent Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+U, Ctrl+S, F12
+      if (
+        (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'u' || e.key === 's')) ||
+        e.key === 'F12'
+      ) {
+        e.preventDefault();
+        toast.error('Shortcut disabled! 🚫');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('cut', handleCopy);
+    document.addEventListener('paste', handleCopy);
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Disable text selection via JS as well
+    document.onselectstart = () => false;
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('cut', handleCopy);
+      document.removeEventListener('paste', handleCopy);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.onselectstart = null;
+    };
+  }, [step, handleCheat]);
+
+
 
   // Timer
   useEffect(() => {
@@ -78,21 +138,7 @@ export default function TakeTest() {
     } finally { setLoading(false); }
   };
 
-  const submitTest = async (auto = false) => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setLoading(true);
-    try {
-      const answersArray = test.questions.map((_, i) => answers[i] ?? -1);
-      const res = await axios.post('/student/submit-test', {
-        testId: test.id, answers: answersArray,
-        tabSwitchCount: tabSwitchCount.current, autoSubmitted: auto
-      });
-      setResult(res.data.result); setStep('submitted');
-      toast.success('Test submitted successfully!');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Submission failed');
-    } finally { setLoading(false); }
-  };
+
 
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
   const answeredCount = Object.keys(answers).length;
@@ -102,9 +148,27 @@ export default function TakeTest() {
     <div className="max-w-2xl mx-auto">
       {/* Anti-cheat warning overlay */}
       {showWarning && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-semibold text-sm flex items-center gap-3
-          ${warnings >= 2 ? 'bg-red-500' : 'bg-orange-500'}`}>
-          <AlertTriangle size={20} />{warningMsg}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className={`max-w-sm w-full mx-4 p-8 rounded-3xl shadow-2xl border-2 flex flex-col items-center text-center gap-4 transform animate-in zoom-in duration-300
+            ${warnings >= 2 ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${warnings >= 2 ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
+              <AlertTriangle size={32} />
+            </div>
+            <div>
+              <h3 className={`text-xl font-bold ${warnings >= 2 ? 'text-red-700' : 'text-orange-700'}`}>
+                {warnings >= 3 ? 'Test Terminated' : `Warning ${warnings}/2`}
+              </h3>
+              <p className="text-gray-600 mt-2 font-medium">{warningMsg}</p>
+            </div>
+            {warnings < 3 && (
+              <button 
+                onClick={() => setShowWarning(false)}
+                className={`mt-2 px-6 py-2.5 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95
+                  ${warnings >= 2 ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'}`}>
+                I Understand
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -117,7 +181,7 @@ export default function TakeTest() {
             </div>
             <div>
               <h1 className="font-bold text-gray-800 text-lg">Test</h1>
-              <p className="text-xs text-gray-400">Enter the secret code from your teacher to begin</p>
+              <p className="text-xs text-gray-400">Enter the secret code from your faculty to begin</p>
             </div>
           </div>
 
@@ -154,7 +218,7 @@ export default function TakeTest() {
 
       {/* Taking test */}
       {step === 'taking' && test && (
-        <div className="space-y-4">
+        <div className="space-y-4 select-none" style={{ userSelect: 'none' }}>
           <div className="card">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -177,16 +241,10 @@ export default function TakeTest() {
           </div>
 
           {test.questions.map((q, i) => (
-            <div key={i} className={`card border-2 transition-all ${answers[i] !== undefined ? 'border-blue-200 bg-blue-50/30' : 'border-transparent'}`}>
+            <div key={i} className={`card relative border-2 transition-all ${answers[i] !== undefined ? 'border-blue-200 bg-blue-50/30' : 'border-transparent'}`}>
               <div className="flex items-start gap-3 mb-4">
                 <span className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 text-white rounded-lg text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`badge-${q.difficulty}`}>{q.difficulty}</span>
-                    {q.topic && <span className="text-xs text-gray-400">• {q.topic}</span>}
-                  </div>
                   <p className="text-sm font-medium text-gray-800">{q.question}</p>
-                </div>
               </div>
               <div className="space-y-2 ml-10">
                 {q.options.map((opt, j) => (
@@ -234,7 +292,16 @@ export default function TakeTest() {
               </div>
             </div>
           )}
-          <button onClick={() => { setStep('enter-code'); setCode(''); setTest(null); setAnswers({}); setWarnings(0); tabSwitchCount.current = 0; }}
+          <button onClick={() => { 
+            setStep('enter-code'); 
+            setCode(''); 
+            setTest(null); 
+            setAnswers({}); 
+            setWarnings(0); 
+            tabSwitchCount.current = 0; 
+            lastViolationAt.current = 0;
+            setShowWarning(false);
+          }}
             className="btn-primary w-full py-3">Done</button>
         </div>
       )}

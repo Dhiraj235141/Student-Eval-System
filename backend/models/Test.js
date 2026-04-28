@@ -10,7 +10,7 @@ const questionSchema = new mongoose.Schema({
 
 const testSchema = new mongoose.Schema({
   subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
-  teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  faculty: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   topic: { type: String, required: true },
   questions: [questionSchema], // 4 easy, 4 medium, 2 hard
   secretCode: { type: String, required: true },

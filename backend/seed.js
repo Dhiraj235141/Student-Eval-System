@@ -1,5 +1,5 @@
 /**
- * SEED SCRIPT — Creates default Admin, Teacher, and Student users
+ * SEED SCRIPT — Creates default Admin, Faculty, and Student users
  * 
  * HOW TO RUN:
  *   cd backend
@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
   subjects: Array,
   enrolledSubjects: Array,
   class: String,
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  isEmailVerified: { type: Boolean, default: true }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
@@ -34,8 +35,8 @@ const users = [
   {
     name: 'Prof. Ramesh Kumar',
     email: 'kunal@123.com',
-    password: 'teacher123',
-    role: 'teacher'
+    password: 'faculty123',
+    role: 'faculty'
   },
   {
     name: 'Rahul Sharma',
@@ -55,7 +56,10 @@ async function seed() {
     for (const u of users) {
       const existing = await User.findOne({ email: u.email });
       if (existing) {
-        console.log(`⚠️  User already exists: ${u.email} — skipping`);
+        console.log(`⚠️  User already exists: ${u.email} — updating to be verified`);
+        existing.isEmailVerified = true;
+        existing.isActive = true;
+        await existing.save();
         continue;
       }
       const hashed = await bcrypt.hash(u.password, 12);
@@ -66,8 +70,8 @@ async function seed() {
     console.log('\n🎉 Seed complete! Login credentials:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('👤 Admin    → admin@school.com   / admin123');
-    console.log('👨‍🏫 Teacher  → teacher@school.com / teacher123');
-    console.log('👨‍🎓 Student  → student@school.com / student123');
+    console.log('👨‍🏫 Faculty  → kunal@123.com      / faculty123');
+    console.log('👨‍🎓 Student  → mansi@123.com      / student123');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     process.exit(0);

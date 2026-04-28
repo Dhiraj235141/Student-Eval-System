@@ -6,16 +6,17 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, minlength: 6 },
   googleId: { type: String, default: '' },
+  githubId: { type: String, default: '' },
   appleId: { type: String, default: '' },
   otp: { type: String },
   otpExpiry: { type: Date },
-  role: { type: String, enum: ['admin', 'teacher', 'student'], required: true },
+  role: { type: String, enum: ['admin', 'faculty', 'student'], required: true },
   rollNo: { type: String }, // for students
   year: { type: String },   // First Year, Second Year etc
   branch: { type: String }, // Computer Science, IT etc
   division: { type: String }, // A, B, C
-  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }], // for teachers
-  department: { type: String }, // for teachers
+  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }], // for faculty
+  department: { type: String }, // for faculty
   enrolledSubjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }], // for students
   class: { type: String }, // for students
   profileImage: { type: String, default: '' },

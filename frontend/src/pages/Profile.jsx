@@ -27,7 +27,7 @@ export default function Profile() {
 
   const roleConfig = {
     admin: { color: 'bg-purple-500', label: 'Administrator', icon: Shield },
-    teacher: { color: 'bg-primary', label: 'Faculty', icon: User },
+    faculty: { color: 'bg-primary', label: 'Faculty', icon: User },
     student: { color: 'bg-success', label: 'Student', icon: GraduationCap }
   };
   const cfg = roleConfig[user?.role] || roleConfig.student;
@@ -81,7 +81,7 @@ export default function Profile() {
               </div>
             </div>
           </div>
-          {user?.role === 'teacher' && !editingProfile && (
+          {user?.role === 'faculty' && !editingProfile && (
             <button onClick={() => setEditingProfile(true)} className="btn-secondary py-1.5 px-3 text-sm flex items-center gap-2">
               <Edit2 size={14} /> Edit Profile
             </button>
@@ -132,10 +132,10 @@ export default function Profile() {
                 <RoleIcon size={14} className="text-primary" />
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Role</span>
               </div>
-              <p className="text-sm font-semibold text-gray-700 capitalize">{user?.role === 'teacher' ? 'Faculty' : user?.role}</p>
+              <p className="text-sm font-semibold text-gray-700 capitalize">{user?.role === 'faculty' ? 'Faculty' : user?.role}</p>
             </div>
 
-            {user?.role === 'teacher' && user?.department && (
+            {user?.role === 'faculty' && user?.department && (
               <div className="bg-secondary rounded-xl p-4 sm:col-span-2">
                 <div className="flex items-center gap-2 mb-1">
                   <Briefcase size={14} className="text-primary" />
@@ -201,7 +201,7 @@ export default function Profile() {
               </>
             )}
 
-            {user?.role === 'teacher' && user?.subjects?.length > 0 && (
+            {user?.role === 'faculty' && user?.subjects?.length > 0 && (
               <div className="bg-secondary rounded-xl p-4 sm:col-span-2">
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen size={14} className="text-primary" />

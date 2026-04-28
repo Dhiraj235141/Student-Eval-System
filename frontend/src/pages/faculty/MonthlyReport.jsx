@@ -1,34 +1,59 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import { FileDown, Calendar, Search, Activity, BookOpen, ChevronDown } from 'lucide-react';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-export default function TeacherMonthlyReport() {
-  const [subjects, setSubjects] = useState([]);
+export default function FacultyMonthlyReport() {
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [availableClasses, setAvailableClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState('');
+  const subjects = allSubjects.filter(s => s.class === selectedClass);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Academic Year (2025 etc)
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get('/teacher/subjects').then(r => setSubjects(r.data.subjects));
+    axios.get('/faculty/subjects').then(r => {
+      const subs = r.data.subjects || [];
+      setAllSubjects(subs);
+      const classes = [...new Set(subs.map(s => s.class))].filter(Boolean);
+      setAvailableClasses(classes);
+      if (classes.length > 0) setSelectedClass(classes[0]);
+    });
   }, []);
+
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.find(s => s._id === selectedSubject)) {
+      setSelectedSubject(subjects[0]._id);
+    } else if (subjects.length === 0) {
+      setSelectedSubject('');
+    }
+  }, [selectedClass, allSubjects]);
 
   const generateReport = async () => {
     if (!selectedSubject) { toast.error('Please select a subject'); return; }
     setLoading(true);
     try {
-      const res = await axios.get(`/teacher/monthly-report?subjectId=${selectedSubject}&month=${selectedMonth}&year=${selectedYear}`);
-      setReport(res.data.report);
+      const res = await axios.get(`/faculty/monthly-report?subjectId=${selectedSubject}&month=${selectedMonth}&year=${selectedYear}`);
+      setReport(res.data.report || []);
       toast.success('Report successfully generated!');
     } catch (err) { toast.error('Failed to generate report'); }
     finally { setLoading(false); }
   };
+
+  const classAverage = report && report.length > 0 
+    ? (report.reduce((sum, r) => sum + parseFloat(r.averageScore), 0) / report.length).toFixed(1) 
+    : 0;
+  
+  const classAttendance = report && report.length > 0
+    ? (report.reduce((sum, r) => sum + parseFloat(r.attendancePercentage), 0) / report.length).toFixed(1)
+    : 0;
 
   const downloadPDF = () => {
     if (!report || report.length === 0) return;
@@ -52,7 +77,7 @@ export default function TeacherMonthlyReport() {
       r.grade
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 45,
@@ -86,11 +111,19 @@ export default function TeacherMonthlyReport() {
 
       <div className="card">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div className="md:col-span-2">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5"><ChevronDown size={14}/> Class *</label>
+            <select className="input" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
+              {availableClasses.length === 0 && <option value="">No Classes</option>}
+              {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5"><BookOpen size={14}/> Subject *</label>
             <select className="input" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
               <option value="">-- Select Subject --</option>
-              {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code}) - {s.class}</option>)}
+              {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
             </select>
           </div>
           
@@ -101,14 +134,43 @@ export default function TeacherMonthlyReport() {
             </select>
           </div>
 
-          <button onClick={generateReport} disabled={loading || !selectedSubject} className="btn-primary w-full py-2.5 flex justify-center items-center gap-2">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5"><Calendar size={14}/> Year</label>
+            <select className="input" value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          <button onClick={generateReport} disabled={loading || !selectedSubject} className="btn-primary w-full py-2.5 flex justify-center items-center gap-2 md:col-span-4">
             <Search size={18} /> {loading ? 'Fetching...' : 'Get Report'}
           </button>
         </div>
       </div>
 
       {report && (
-        <div className="card px-0 overflow-hidden animate-fade-in">
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="card bg-gradient-to-br from-indigo-50 to-white border-indigo-100 flex items-center gap-4 py-6">
+              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100">
+                <Activity size={24} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-indigo-900/60 uppercase tracking-wider">Class Average Score</p>
+                <h3 className="text-3xl font-black text-indigo-900">{classAverage}<span className="text-lg font-normal text-indigo-400">/10</span></h3>
+              </div>
+            </div>
+            <div className="card bg-gradient-to-br from-cyan-50 to-white border-cyan-100 flex items-center gap-4 py-6">
+              <div className="w-12 h-12 bg-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-100">
+                <FileDown size={24} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-cyan-900/60 uppercase tracking-wider">Average Attendance</p>
+                <h3 className="text-3xl font-black text-cyan-900">{classAttendance}<span className="text-lg font-normal text-cyan-400">%</span></h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="card px-0 overflow-hidden animate-fade-in">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <div>
               <h2 className="font-bold text-gray-800">Report Results</h2>
@@ -151,7 +213,8 @@ export default function TeacherMonthlyReport() {
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

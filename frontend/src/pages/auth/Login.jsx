@@ -33,7 +33,7 @@ export default function Login() {
       const user = await login(email, password);
       toast.success(`Welcome back, ${user.name}!`);
       if (user.role === 'admin') navigate('/admin');
-      else if (user.role === 'teacher') navigate('/teacher');
+      else if (user.role === 'faculty') navigate('/faculty');
       else navigate('/student');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
@@ -53,7 +53,7 @@ export default function Login() {
         updateUser(user);
         toast.success(`Welcome, ${user.name}!`);
         if (user.role === 'admin') navigate('/admin');
-        else if (user.role === 'teacher') navigate('/teacher');
+        else if (user.role === 'faculty') navigate('/faculty');
         else navigate('/student');
       } catch (err) {
         toast.error(err.response?.data?.message || 'Google login failed');
@@ -69,7 +69,7 @@ export default function Login() {
   const handleAppleSuccess = async (response) => {
     try {
       if (!response.authorization) return;
-      const res = await axios.post('/auth/apple', { 
+      const res = await axios.post('/auth/apple', {
         id_token: response.authorization.id_token,
         user: response.user ? JSON.stringify(response.user) : null
       });
@@ -79,7 +79,7 @@ export default function Login() {
       updateUser(user);
       toast.success(`Welcome, ${user.name}!`);
       if (user.role === 'admin') navigate('/admin');
-      else if (user.role === 'teacher') navigate('/teacher');
+      else if (user.role === 'faculty') navigate('/faculty');
       else navigate('/student');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Apple login failed');
@@ -93,8 +93,8 @@ export default function Login() {
 
         {/* Left Panel - Illustration */}
         <div className="hidden md:flex flex-col items-center justify-center bg-secondary w-[45%] p-8 border-r border-blue-100">
-          <div className="w-40 h-40 bg-primary rounded-[2rem] flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30">
-            <GraduationCap size={72} className="text-white" />
+          <div className="w-40 h-40 bg-white rounded-[2rem] flex items-center justify-center mb-6 shadow-xl border border-gray-100 p-4">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-2xl font-bold text-primary text-center">Student Evaluation System</h2>
           <p className="text-sm text-blue-500 font-medium text-center mt-2">Empowering Education with AI</p>
@@ -105,8 +105,8 @@ export default function Login() {
 
           {/* Mobile logo */}
           <div className="flex flex-col items-center mb-6 md:hidden">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-3 shadow">
-              <GraduationCap size={32} className="text-white" />
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-md border border-gray-100 p-1.5">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <p className="text-xs text-blue-500 font-bold">Student Evaluation System</p>
           </div>
@@ -213,7 +213,7 @@ export default function Login() {
               authOptions={{
                 clientId: 'com.student.eval.service', // Will error unless they provide real client ID later
                 scope: 'email name',
-                redirectURI: 'https://mysite.com', 
+                redirectURI: 'https://mysite.com',
                 usePopup: true,
               }}
               uiType="dark"
@@ -230,7 +230,7 @@ export default function Login() {
                   className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-md border hover:bg-gray-50 transition-colors text-black"
                 >
                   <svg width="20" height="20" viewBox="0 0 384 512" fill="currentColor">
-                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
                   </svg>
                 </button>
               )}

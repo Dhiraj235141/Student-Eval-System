@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { BookOpen, FileText, Upload, ExternalLink } from 'lucide-react';
 
-export default function TeacherSubjects() {
+export default function FacultySubjects() {
   const [subjects, setSubjects] = useState([]);
   const [uploadingId, setUploadingId] = useState(null);
 
@@ -11,7 +11,7 @@ export default function TeacherSubjects() {
 
   const fetchSubjects = async () => {
     try {
-      const res = await axios.get('/teacher/subjects');
+      const res = await axios.get('/faculty/subjects');
       setSubjects(res.data.subjects);
     } catch { toast.error('Failed to load subjects'); }
   };
@@ -23,7 +23,7 @@ export default function TeacherSubjects() {
     try {
       const fd = new FormData();
       fd.append('syllabuspdf', file);
-      await axios.post(`/teacher/subjects/${id}/syllabus-pdf`, fd, {
+      await axios.post(`/faculty/subjects/${id}/syllabus-pdf`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Syllabus PDF uploaded!');

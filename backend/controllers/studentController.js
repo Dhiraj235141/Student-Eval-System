@@ -6,22 +6,34 @@ const Assignment = require('../models/Assignment');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Subject = require('../models/Subject');
+const SystemConfig = require('../models/SystemConfig');
 const path = require('path');
 const fs = require('fs');
 
-// @desc    Get subjects for student (year-based)
+// @desc    Get subjects for student (year-based, filtered by active semester)
 // @route   GET /api/student/subjects
 exports.getSubjects = async (req, res) => {
   try {
     const student = await User.findById(req.user.id);
+    const activeSemester = await SystemConfig.getActiveSemester();
+
     const subjects = await Subject.find({
       isActive: true,
+      semesterType: activeSemester,
       $or: [
         { _id: { $in: student.enrolledSubjects || [] } },
-        { class: student.year }
+        { 
+          class: student.year,
+          $or: [
+            { branch: student.branch }, // Mongoose handles this correctly for arrays (membership check)
+            { branch: 'All' },
+            { branch: [] },
+            { branch: { $exists: false } }
+          ]
+        }
       ]
-    }, 'name code class');
-    res.json({ success: true, subjects });
+    }, 'name code class branch semesterType');
+    res.json({ success: true, subjects, activeSemester });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -85,7 +97,14 @@ exports.submitTest = async (req, res) => {
         else if (q.difficulty === 'medium') mediumScore++;
         else hardScore++;
       } else {
-        if (q.topic) weakTopics.add(q.topic);
+        if (q.topic) {
+          // Split topic for granular result display
+          const subTopics = q.topic.split(/[,;\n]|\.(?=\s|$)/)
+            .map(s => s.trim().replace(/^[\.\s]+|[\.\s]+$/g, ''))
+            .filter(s => s.length > 3);
+          
+          subTopics.forEach(sub => weakTopics.add(sub));
+        }
       }
     });
 
@@ -193,10 +212,33 @@ exports.getMyAttendance = async (req, res) => {
     if (type) filter.type = type;
 
     const attendance = await Attendance.find(filter).populate('subject', 'name code').sort({ date: -1 });
-    const total = attendance.length;
-    const present = attendance.filter(a => a.status === 'present').length;
+    
+    // Calculate class-wide sessions to get an accurate denominator
+    const allInSubject = await Attendance.find({ subject: subjectId, month: filter.month, year: filter.year });
+    const sessionSet = new Set();
+    allInSubject.forEach(a => {
+      const dateStr = new Date(a.date).toISOString().split('T')[0];
+      sessionSet.add(`${dateStr}|${a.type || 'theory'}`);
+    });
+    const totalSessions = sessionSet.size;
+    
+    // Count UNIQUE sessions where this specific student was present
+    const presentSessions = new Set();
+    attendance.forEach(a => {
+      if (a.status === 'present') {
+        const dateStr = new Date(a.date).toISOString().split('T')[0];
+        presentSessions.add(`${dateStr}|${a.type || 'theory'}`);
+      }
+    });
+    const presentCount = presentSessions.size;
 
-    res.json({ success: true, attendance, total, present, percentage: total ? ((present / total) * 100).toFixed(1) : 0 });
+    res.json({ 
+      success: true, 
+      attendance, 
+      total: totalSessions, 
+      present: presentCount, 
+      percentage: totalSessions ? ((presentCount / totalSessions) * 100).toFixed(1) : 0 
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -207,13 +249,23 @@ exports.getMyAttendance = async (req, res) => {
 exports.getAssignments = async (req, res) => {
   try {
     const student = await User.findById(req.user.id);
-    // Match assignments whose subject class matches the student's year OR they are enrolled
-    const Subject = require('../models/Subject');
+    const SystemConfig = require('../models/SystemConfig');
+    const activeSemester = await SystemConfig.getActiveSemester();
+
     const matchingSubjects = await Subject.find({
       $or: [
         { _id: { $in: student.enrolledSubjects || [] } },
-        { class: student.year }
+        { 
+          class: student.year,
+          $or: [
+            { branch: student.branch },
+            { branch: 'All' },
+            { branch: [] },
+            { branch: { $exists: false } }
+          ]
+        }
       ],
+      semesterType: activeSemester,
       isActive: true
     }, '_id');
     const subjectIds = matchingSubjects.map(s => s._id);
@@ -263,12 +315,17 @@ exports.submitAssignmentPDF = async (req, res) => {
     const now = new Date();
     const isLate = now > assignment.deadline;
 
-    // Try AI grading
+    // Try AI grading — pass assignment questions & description for contextual grading
     let aiScore = null;
     try {
       const aiController = require('./aiController');
       if (aiController.gradeAssignmentPDF) {
-        aiScore = await aiController.gradeAssignmentPDF(req.file.path, assignment.maxMarks || 10);
+        aiScore = await aiController.gradeAssignmentPDF(
+          req.file.path,
+          assignment.maxMarks || 10,
+          assignment.questions || [],
+          assignment.description || ''
+        );
       }
     } catch (aiErr) {
       console.error('AI grading failed:', aiErr.message);
@@ -284,9 +341,9 @@ exports.submitAssignmentPDF = async (req, res) => {
     });
     await assignment.save();
 
-    // Notify teacher
+    // Notify faculty
     await Notification.create({
-      recipient: assignment.teacher,
+      recipient: assignment.faculty,
       sender: req.user.id,
       title: '📄 New Assignment Submission',
       message: `A student submitted assignment "${assignment.title}"${aiScore !== null ? `. AI Score: ${aiScore}/${assignment.maxMarks}` : ''}`,
@@ -326,18 +383,37 @@ exports.submitAssignment = async (req, res) => {
 exports.getWeakTopics = async (req, res) => {
   try {
     const results = await TestResult.find({ student: req.user.id }).populate('subject', 'name');
-    const topicMap = {};
+    const topicMap = {}; // topicKey -> { topic, subjectName, subjectId, count }
 
     results.forEach(r => {
       r.weakTopics.forEach(topic => {
-        const key = `${r.subject?.name} - ${topic}`;
-        topicMap[key] = (topicMap[key] || 0) + 1;
+        const subjectId = r.subject?._id?.toString() || 'unknown';
+        const subjectName = r.subject?.name || 'Unknown Subject';
+        
+        // Split composite topic strings into granular sub-topics
+        // Handles: "Topic A, Topic B", "Topic A; Topic B", "Topic A. Topic B"
+        const subTopics = topic
+          .split(/[,;\n]|\.(?=\s|$)/) 
+          .map(s => s.trim().replace(/^[\.\s]+|[\.\s]+$/g, '')) // Trim and remove leading/trailing dots
+          .filter(s => s.length > 3); // Ignore very short or empty strings
+
+        subTopics.forEach(sub => {
+          const key = `${subjectId}-${sub.toLowerCase()}`; // Case-insensitive matching
+          if (!topicMap[key]) {
+            topicMap[key] = { 
+              topic: sub, 
+              subjectName, 
+              subjectId, 
+              failCount: 0 
+            };
+          }
+          topicMap[key].failCount++;
+        });
       });
     });
 
-    const weakTopics = Object.entries(topicMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([topic, count]) => ({ topic, failCount: count }));
+    const weakTopics = Object.values(topicMap)
+      .sort((a, b) => b.failCount - a.failCount);
 
     res.json({ success: true, weakTopics });
   } catch (err) {
@@ -368,6 +444,30 @@ exports.getMonthlyProgress = async (req, res) => {
     }));
 
     res.json({ success: true, progress });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+// @desc    Get announcements for student
+// @route   GET /api/student/announcements
+exports.getAnnouncements = async (req, res) => {
+  try {
+    const Announcement = require('../models/Announcement');
+    const student = await User.findById(req.user.id);
+    
+    const announcements = await Announcement.find({
+      $or: [
+        { targetRole: 'student' },
+        { targetRole: 'all' },
+        { subject: { $in: student.enrolledSubjects || [] } }
+      ]
+    })
+    .populate('createdBy', 'name role')
+    .populate('subject', 'name code')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+    res.json({ success: true, announcements });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -483,9 +483,17 @@ exports.updateProfile = async (req, res) => {
     if (emailExists) return res.status(400).json({ success: false, message: 'Email already in use by another account' });
 
     const updateData = { name, email };
-    if (rollNo !== undefined) updateData.rollNo = rollNo;
-    if (year !== undefined) updateData.year = year;
-    if (branch !== undefined) updateData.branch = branch;
+    
+    // Safety: Prevent students from changing their core academic details themselves
+    if (req.user.role === 'student') {
+      // Students can't change year/branch/rollNo via profile update
+      // These are locked once registered or set by admin
+    } else {
+      if (year !== undefined) updateData.year = year;
+      if (branch !== undefined) updateData.branch = branch;
+      if (rollNo !== undefined) updateData.rollNo = rollNo;
+    }
+
     if (division !== undefined) updateData.division = division;
     if (department !== undefined) updateData.department = department;
     if (profileImage !== undefined) updateData.profileImage = profileImage;

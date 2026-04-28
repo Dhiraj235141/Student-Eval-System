@@ -5,13 +5,13 @@ const { uploadPDF, uploadSyllabus } = require('../middleware/uploadMiddleware');
 const {
   createTest, getSubjects, updateSyllabus, uploadSyllabusPDF, getResults,
   getAttendance, generateAttendanceCode, markAttendanceManual,
-  createAssignment, publishAssignment, updateAssignment,
+  createAssignment, publishAssignment, updateAssignment, deleteAssignment,
   getSubmissions, gradeSubmission, getAssignments,
   createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, getMonthlyReport,
   getTests, updateTest, deleteTest
-} = require('../controllers/teacherController');
+} = require('../controllers/facultyController');
 
-router.use(protect, authorize('teacher'));
+router.use(protect, authorize('faculty'));
 
 router.get('/subjects', getSubjects);
 router.put('/subjects/:id/syllabus', updateSyllabus);
@@ -28,6 +28,7 @@ router.get('/monthly-report', getMonthlyReport);
 router.get('/assignments', getAssignments);
 router.post('/assignments', createAssignment);
 router.put('/assignments/:id', updateAssignment);
+router.delete('/assignments/:id', deleteAssignment);
 router.put('/assignments/:id/publish', publishAssignment);
 router.get('/assignments/:id/submissions', getSubmissions);
 router.put('/assignments/:id/submissions/:studentId/grade', gradeSubmission);

@@ -135,7 +135,7 @@ export default function LandingPage() {
   const features = [
     { icon: Brain, title: 'AI-Powered Tests', desc: 'Unique questions generated per student from your syllabus', color: 'from-blue-500 to-cyan-400' },
     { icon: BarChart2, title: 'Smart Analytics', desc: 'Track performance, weak topics, and growth over time', color: 'from-purple-500 to-pink-400' },
-    { icon: Users, title: 'Multi-Role System', desc: 'Student, Teacher, and Admin dashboards in one platform', color: 'from-emerald-500 to-teal-400' },
+    { icon: Users, title: 'Multi-Role System', desc: 'Student, Faculty, and Admin dashboards in one platform', color: 'from-emerald-500 to-teal-400' },
     { icon: Shield, title: 'Anti-Cheat Monitoring', desc: 'Tab switch detection and timed exams for integrity', color: 'from-orange-500 to-amber-400' },
   ];
 
@@ -152,8 +152,8 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
-            <GraduationCap size={20} className="text-white" />
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 p-1">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <span className="font-bold text-gray-900 text-base tracking-tight">Student Eval System</span>
         </div>
@@ -166,7 +166,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 flex flex-col items-center justify-center min-h-[88vh] text-center px-6">
+      <section className="relative z-10 flex flex-col items-center justify-center min-h-[88vh] text-center px-6 py-12 md:py-0">
         <div className={`transition-all duration-1000 ${visible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-600 px-4 py-1.5 rounded-full text-xs font-semibold mb-8 shadow-sm">
@@ -188,10 +188,10 @@ export default function LandingPage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-center w-full max-w-xs sm:max-w-none mx-auto">
             <button
               onClick={() => handleNavigation('/login')}
-              className="group flex items-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 transition-all duration-300 text-base hover:-translate-y-0.5 active:translate-y-0"
+              className="group flex items-center justify-center gap-3 w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 transition-all duration-300 text-base hover:-translate-y-0.5 active:translate-y-0"
             >
               Start Journey
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -200,7 +200,7 @@ export default function LandingPage() {
               onClick={() => {
                 document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
               }}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold px-6 py-4 rounded-2xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-sm"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto text-gray-600 hover:text-gray-900 font-semibold px-6 py-4 rounded-2xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-sm"
             >
               Learn More <ChevronDown size={16} />
             </button>
@@ -208,7 +208,7 @@ export default function LandingPage() {
         </div>
 
         {/* Floating stats */}
-        <div className={`absolute bottom-12 flex gap-8 transition-all duration-1000 delay-500 ${visible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`relative mt-12 md:absolute md:mt-0 md:bottom-12 flex flex-wrap justify-center gap-6 sm:gap-8 w-full transition-all duration-1000 delay-500 ${visible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           {[
             { value: 'AI', label: 'Generated Tests' },
             { value: '3', label: 'User Roles' },

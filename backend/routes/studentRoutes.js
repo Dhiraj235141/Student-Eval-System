@@ -5,12 +5,13 @@ const { uploadPDF } = require('../middleware/uploadMiddleware');
 const {
   validateCode, submitTest, getMyResults, getMyAttendance,
   getAssignments, submitAssignment, submitAssignmentPDF,
-  getWeakTopics, getMonthlyProgress, markAttendanceByCode, getSubjects
+  getWeakTopics, getMonthlyProgress, markAttendanceByCode, getSubjects, getAnnouncements
 } = require('../controllers/studentController');
 
 router.use(protect, authorize('student'));
 
 router.get('/subjects', getSubjects);
+router.get('/announcements', getAnnouncements);
 
 router.post('/validate-code', validateCode);
 router.post('/submit-test', submitTest);

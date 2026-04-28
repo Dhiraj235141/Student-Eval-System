@@ -3,8 +3,12 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Brain, FileText, Send, Loader, X, BookOpen, ExternalLink, Edit2, Check, Clock, RefreshCw, Trash2 } from 'lucide-react';
 
-export default function TeacherCreateTest() {
-  const [subjects, setSubjects] = useState([]);
+export default function FacultyCreateTest() {
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [filterYear, setFilterYear] = useState('');
+  
+  const subjects = allSubjects.filter(s => s.class === filterYear);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [topic, setTopic] = useState('');
   const [questions, setQuestions] = useState([]);
@@ -20,16 +24,30 @@ export default function TeacherCreateTest() {
   const [editDuration, setEditDuration] = useState(''); // duration for edit form
 
   useEffect(() => {
-    axios.get('/teacher/subjects')
-      .then(res => setSubjects(res.data.subjects))
+    axios.get('/faculty/subjects')
+      .then(res => {
+        const subs = res.data.subjects || [];
+        setAllSubjects(subs);
+        const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
+        setAvailableYears(years);
+        if (years.length > 0) setFilterYear(years[0]);
+      })
       .catch(() => toast.error('Failed to load subjects'));
     fetchTests();
   }, []);
 
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.find(s => s._id === selectedSubject)) {
+      setSelectedSubject(subjects[0]._id);
+    } else if (subjects.length === 0) {
+      setSelectedSubject('');
+    }
+  }, [filterYear, allSubjects]);
+
   const fetchTests = async () => {
     setLoadingTests(true);
     try {
-      const res = await axios.get('/teacher/tests');
+      const res = await axios.get('/faculty/tests');
       setTests(res.data.tests);
     } catch { /* silently fail */ }
     finally { setLoadingTests(false); }
@@ -37,13 +55,21 @@ export default function TeacherCreateTest() {
 
   const generateQuestions = async () => {
     if (!topic || !selectedSubject) { toast.error('Please enter a topic and select a subject'); return; }
-    // Always clear previous questions first so deleted questions don't carry over
     setQuestions([]);
     setLoading(true);
     try {
-      const subjectName = subjects.find(s => s._id === selectedSubject)?.name || '';
-      // Always explicitly request 10 questions regardless of any previous state
-      const res = await axios.post('/ai/generate-questions', { topics: topic, subjectName, count: 10 });
+      const subjectData = subjects.find(s => s._id === selectedSubject);
+      const subjectName = subjectData?.name || '';
+      // Pass syllabus text so AI generates questions strictly within scope
+      const syllabusText = Array.isArray(subjectData?.syllabus)
+        ? subjectData.syllabus.join(' ')
+        : (subjectData?.syllabus || '');
+      const res = await axios.post('/ai/generate-questions', {
+        topics: topic,
+        subjectName,
+        syllabusText: syllabusText || undefined,
+        count: 10
+      });
       const generated = res.data.questions || [];
       setQuestions(generated);
       toast.success(`Generated ${generated.length} questions!`);
@@ -57,7 +83,7 @@ export default function TeacherCreateTest() {
     if (!duration || duration < 1) { toast.error('Set a valid duration'); return; }
     setSaving(true);
     try {
-      const res = await axios.post('/teacher/tests', { subjectId: selectedSubject, topic, questions, durationMinutes: duration });
+      const res = await axios.post('/faculty/tests', { subjectId: selectedSubject, topic, questions, durationMinutes: duration });
       setCreatedTest(res.data.test);
       fetchTests();
       toast.success('Test published!');
@@ -70,7 +96,7 @@ export default function TeacherCreateTest() {
     if (!editingTest) return;
     setSaving(true);
     try {
-      await axios.put(`/teacher/tests/${editingTest._id}`, {
+      await axios.put(`/faculty/tests/${editingTest._id}`, {
         topic: editingTest.topic,
         questions: editingTest.questions,
         durationMinutes: editDuration ? parseInt(editDuration) : undefined
@@ -86,7 +112,7 @@ export default function TeacherCreateTest() {
   const deleteTest = async (id, topic) => {
     if (!window.confirm(`Delete test "${topic}"? This cannot be undone.`)) return;
     try {
-      await axios.delete(`/teacher/tests/${id}`);
+      await axios.delete(`/faculty/tests/${id}`);
       toast.success('Test deleted');
       fetchTests();
     } catch { toast.error('Failed to delete test'); }
@@ -146,13 +172,20 @@ export default function TeacherCreateTest() {
         <div className="card space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Year</label>
+              <select className="input" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+                {availableYears.length === 0 && <option value="">No Years</option>}
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">Subject</label>
               <select className="input" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
                 <option value="">Select a subject...</option>
                 {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
               </select>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Test Topic(s)
               </label>
@@ -189,7 +222,7 @@ export default function TeacherCreateTest() {
             className="w-full btn-primary py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 transition-opacity border-0 shadow-md shadow-indigo-200"
           >
             {loading ? <Loader className="animate-spin" size={18} /> : <Brain size={18} />}
-            {loading ? 'Generating 10 questions using Llama 3.1 (Free)...' : 'Generate 10 AI Questions'}
+            {loading ? 'Generating 10 questions using Llama 3.1' : 'Generate 10 AI Questions'}
           </button>
 
           {questions.length > 0 && (
@@ -326,7 +359,7 @@ export default function TeacherCreateTest() {
                       <p className="font-black text-indigo-700 tracking-widest font-mono text-sm">{t.secretCode}</p>
                     </div>
                     <button onClick={() => setEditingTest({ ...t })} className="p-2 rounded-xl hover:bg-indigo-50 text-indigo-600 border border-indigo-100 transition-colors" title="Edit Test"><Edit2 size={14} /></button>
-                      <button onClick={() => deleteTest(t._id, t.topic)} className="p-2 rounded-xl hover:bg-red-50 text-red-400 border border-red-100 transition-colors" title="Delete Test"><Trash2 size={14} /></button>
+                    <button onClick={() => deleteTest(t._id, t.topic)} className="p-2 rounded-xl hover:bg-red-50 text-red-400 border border-red-100 transition-colors" title="Delete Test"><Trash2 size={14} /></button>
                   </div>
                 </div>
               )}

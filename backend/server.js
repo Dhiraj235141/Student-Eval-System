@@ -18,10 +18,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/teacher', require('./routes/teacherRoutes'));
+app.use('/api/faculty', require('./routes/facultyRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Health check

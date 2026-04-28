@@ -17,29 +17,26 @@ const StepIndicator = ({ step }) => {
           <div key={i} className="flex items-center gap-2">
             <div className="flex flex-col items-center gap-1">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-                  isDone
-                    ? 'bg-green-500 text-white'
-                    : isActive
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${isDone
+                  ? 'bg-green-500 text-white'
+                  : isActive
                     ? 'bg-primary text-white shadow-md'
                     : 'bg-gray-100 text-gray-400'
-                }`}
+                  }`}
               >
                 {isDone ? <CheckCircle size={16} /> : num}
               </div>
               <span
-                className={`text-xs font-medium transition-colors ${
-                  isActive ? 'text-primary' : isDone ? 'text-green-500' : 'text-gray-400'
-                }`}
+                className={`text-xs font-medium transition-colors ${isActive ? 'text-primary' : isDone ? 'text-green-500' : 'text-gray-400'
+                  }`}
               >
                 {label}
               </span>
             </div>
             {i < steps.length - 1 && (
               <div
-                className={`w-10 sm:w-14 h-0.5 mb-5 transition-all duration-500 ${
-                  isDone ? 'bg-green-400' : 'bg-gray-200'
-                }`}
+                className={`w-10 sm:w-14 h-0.5 mb-5 transition-all duration-500 ${isDone ? 'bg-green-400' : 'bg-gray-200'
+                  }`}
               />
             )}
           </div>
@@ -104,11 +101,10 @@ const OTPInput = ({ value, onChange }) => {
           value={digits[i] || ''}
           onChange={e => handleChange(e, i)}
           onKeyDown={e => handleKey(e, i)}
-          className={`w-11 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-0 ${
-            digits[i]
-              ? 'border-primary bg-blue-50 text-primary'
-              : 'border-gray-200 bg-white text-gray-800 focus:border-primary'
-          }`}
+          className={`w-11 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-0 ${digits[i]
+            ? 'border-primary bg-blue-50 text-primary'
+            : 'border-gray-200 bg-white text-gray-800 focus:border-primary'
+            }`}
         />
       ))}
     </div>
@@ -206,8 +202,8 @@ export default function ForgotPassword() {
 
         {/* Left Panel */}
         <div className="hidden md:flex flex-col items-center justify-center bg-secondary w-2/5 p-8">
-          <div className="w-40 h-40 bg-primary rounded-3xl flex items-center justify-center mb-6 shadow-lg">
-            <GraduationCap size={72} className="text-white" />
+          <div className="w-40 h-40 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-xl border border-gray-100 p-4">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-xl font-bold text-primary text-center">Student Evaluation System</h2>
           <p className="text-sm text-blue-400 text-center mt-2">
@@ -366,11 +362,10 @@ export default function ForgotPassword() {
                 <div className="relative">
                   <input
                     type={showConfirm ? 'text' : 'password'}
-                    className={`input pl-10 pr-10 ${
-                      confirmPassword && confirmPassword !== newPassword
-                        ? 'border-red-400 focus:ring-red-400'
-                        : ''
-                    }`}
+                    className={`input pl-10 pr-10 ${confirmPassword && confirmPassword !== newPassword
+                      ? 'border-red-400 focus:ring-red-400'
+                      : ''
+                      }`}
                     placeholder="Re-enter your new password"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}

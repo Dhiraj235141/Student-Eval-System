@@ -4,13 +4,17 @@ const { protect, authorize } = require('../middleware/auth');
 const {
   createUser, getAllUsers, updateUser, toggleUserStatus,
   createSubject, updateSubject, enrollStudent, getAllSubjects,
-  getDashboardStats, assignSubjectToTeacher, removeSubjectFromTeacher,
+  getDashboardStats, assignSubjectToFaculty, removeSubjectFromFaculty,
   getAnnouncements,
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
   deleteUser,
-  deleteSubject
+  deleteSubject,
+  requestFacultyOTP,
+  verifyOTPAndCreateFaculty,
+  getActiveSemester,
+  setActiveSemester
 } = require('../controllers/adminController');
 
 router.use(protect, authorize('admin'));
@@ -26,8 +30,12 @@ router.get('/subjects', getAllSubjects);
 router.put('/subjects/:id', updateSubject);
 router.delete('/subjects/:id', deleteSubject);
 router.post('/enroll', enrollStudent);
-router.post('/assign-subject', assignSubjectToTeacher);
-router.post('/remove-subject', removeSubjectFromTeacher);
+router.post('/assign-subject', assignSubjectToFaculty);
+router.post('/remove-subject', removeSubjectFromFaculty);
+router.post('/faculty/request-otp', requestFacultyOTP);
+router.post('/faculty/verify-and-create', verifyOTPAndCreateFaculty);
+router.get('/semester', getActiveSemester);
+router.post('/semester', setActiveSemester);
 router.get('/announcements', protect, getAnnouncements);
 router.post('/announcements', protect, createAnnouncement);
 router.put('/announcements/:id', protect, updateAnnouncement);

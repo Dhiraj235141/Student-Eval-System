@@ -16,20 +16,22 @@ import LandingPage from './pages/LandingPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
-import AdminTeachers from './pages/admin/Teachers';
+import AdminFaculty from './pages/admin/Faculty';
 import AdminStudents from './pages/admin/Students';
 import AdminSubjects from './pages/admin/Subjects';
 import AdminAnnouncements from './pages/admin/Announcements';
+import AdminFeedbackCenter from './pages/admin/FeedbackCenter';
 
-// Teacher Pages
-import TeacherDashboard from './pages/teacher/Dashboard';
-import TeacherSubjects from './pages/teacher/Subjects';
-import CreateTest from './pages/teacher/CreateTest';
-import TeacherAssignments from './pages/teacher/Assignments';
-import TeacherResults from './pages/teacher/Results';
-import TeacherAttendance from './pages/teacher/Attendance';
-import MonthlyReport from './pages/teacher/MonthlyReport';
-import TeacherAnnouncements from './pages/teacher/Announcements';
+// Faculty Pages
+import FacultyDashboard from './pages/faculty/Dashboard';
+import FacultySubjects from './pages/faculty/Subjects';
+import CreateTest from './pages/faculty/CreateTest';
+import FacultyAssignments from './pages/faculty/Assignments';
+import FacultyResults from './pages/faculty/Results';
+import FacultyAttendance from './pages/faculty/Attendance';
+import MonthlyReport from './pages/faculty/MonthlyReport';
+import FacultyAnnouncements from './pages/faculty/Announcements';
+import FacultyFeedback from './pages/faculty/Feedback';
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -38,6 +40,7 @@ import StudentAssignments from './pages/student/Assignments';
 import StudentResults from './pages/student/Results';
 import StudentAttendance from './pages/student/Attendance';
 import WeakTopics from './pages/student/WeakTopics';
+import StudentFeedback from './pages/student/Feedback';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
@@ -69,20 +72,22 @@ function AppRoutes() {
 
       {/* Admin */}
       <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
-      <Route path="/admin/teachers" element={<ProtectedRoute role="admin"><AdminTeachers /></ProtectedRoute>} />
+      <Route path="/admin/faculty" element={<ProtectedRoute role="admin"><AdminFaculty /></ProtectedRoute>} />
       <Route path="/admin/students" element={<ProtectedRoute role="admin"><AdminStudents /></ProtectedRoute>} />
       <Route path="/admin/subjects" element={<ProtectedRoute role="admin"><AdminSubjects /></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute role="admin"><AdminAnnouncements /></ProtectedRoute>} />
+      <Route path="/admin/feedback" element={<ProtectedRoute role="admin"><AdminFeedbackCenter /></ProtectedRoute>} />
 
-      {/* Teacher */}
-      <Route path="/teacher" element={<ProtectedRoute role="teacher"><TeacherDashboard /></ProtectedRoute>} />
-      <Route path="/teacher/subjects" element={<ProtectedRoute role="teacher"><TeacherSubjects /></ProtectedRoute>} />
-      <Route path="/teacher/create-test" element={<ProtectedRoute role="teacher"><CreateTest /></ProtectedRoute>} />
-      <Route path="/teacher/assignments" element={<ProtectedRoute role="teacher"><TeacherAssignments /></ProtectedRoute>} />
-      <Route path="/teacher/results" element={<ProtectedRoute role="teacher"><TeacherResults /></ProtectedRoute>} />
-      <Route path="/teacher/attendance" element={<ProtectedRoute role="teacher"><TeacherAttendance /></ProtectedRoute>} />
-      <Route path="/teacher/monthly-report" element={<ProtectedRoute role="teacher"><MonthlyReport /></ProtectedRoute>} />
-      <Route path="/teacher/announcements" element={<ProtectedRoute role="teacher"><TeacherAnnouncements /></ProtectedRoute>} />
+      {/* Faculty */}
+      <Route path="/faculty" element={<ProtectedRoute role="faculty"><FacultyDashboard /></ProtectedRoute>} />
+      <Route path="/faculty/subjects" element={<ProtectedRoute role="faculty"><FacultySubjects /></ProtectedRoute>} />
+      <Route path="/faculty/create-test" element={<ProtectedRoute role="faculty"><CreateTest /></ProtectedRoute>} />
+      <Route path="/faculty/assignments" element={<ProtectedRoute role="faculty"><FacultyAssignments /></ProtectedRoute>} />
+      <Route path="/faculty/results" element={<ProtectedRoute role="faculty"><FacultyResults /></ProtectedRoute>} />
+      <Route path="/faculty/attendance" element={<ProtectedRoute role="faculty"><FacultyAttendance /></ProtectedRoute>} />
+      <Route path="/faculty/monthly-report" element={<ProtectedRoute role="faculty"><MonthlyReport /></ProtectedRoute>} />
+      <Route path="/faculty/announcements" element={<ProtectedRoute role="faculty"><FacultyAnnouncements /></ProtectedRoute>} />
+      <Route path="/faculty/feedback" element={<ProtectedRoute role="faculty"><FacultyFeedback /></ProtectedRoute>} />
 
       {/* Student */}
       <Route path="/student" element={<ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>} />
@@ -91,6 +96,7 @@ function AppRoutes() {
       <Route path="/student/results" element={<ProtectedRoute role="student"><StudentResults /></ProtectedRoute>} />
       <Route path="/student/attendance" element={<ProtectedRoute role="student"><StudentAttendance /></ProtectedRoute>} />
       <Route path="/student/weak-topics" element={<ProtectedRoute role="student"><WeakTopics /></ProtectedRoute>} />
+      <Route path="/student/feedback" element={<ProtectedRoute role="student"><StudentFeedback /></ProtectedRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

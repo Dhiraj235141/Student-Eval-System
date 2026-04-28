@@ -3,8 +3,12 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Megaphone, Plus, Send, BookOpen, Loader, Trash2, Edit2, X, Bell } from 'lucide-react';
 
-export default function TeacherAnnouncements() {
-  const [subjects, setSubjects] = useState([]);
+export default function FacultyAnnouncements() {
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [filterYear, setFilterYear] = useState('');
+  
+  const subjects = allSubjects.filter(s => s.class === filterYear);
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -18,13 +22,23 @@ export default function TeacherAnnouncements() {
 
   const fetchData = () => {
     Promise.all([
-      axios.get('/teacher/subjects'),
-      axios.get('/teacher/announcements').catch(() => ({ data: { announcements: [] } }))
+      axios.get('/faculty/subjects'),
+      axios.get('/faculty/announcements').catch(() => ({ data: { announcements: [] } }))
     ]).then(([subRes, annRes]) => {
-      setSubjects(subRes.data.subjects);
+      const subs = subRes.data.subjects || [];
+      setAllSubjects(subs);
+      const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
+      setAvailableYears(years);
+      if (years.length > 0) setFilterYear(years[0]);
       setAnnouncements(annRes.data.announcements || []);
     }).finally(() => setLoading(false));
   };
+
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.find(s => s._id === form.subjectId)) {
+      // Don't auto-set subjectId for announcements because empty means ALL
+    }
+  }, [filterYear, allSubjects]);
 
   const saveAnnouncement = async (e) => {
     e.preventDefault();
@@ -32,10 +46,10 @@ export default function TeacherAnnouncements() {
     setSending(true);
     try {
       if (editId) {
-        await axios.put(`/teacher/announcements/${editId}`, form);
+        await axios.put(`/faculty/announcements/${editId}`, form);
         toast.success('Announcement updated!');
       } else {
-        await axios.post('/teacher/announcements', form);
+        await axios.post('/faculty/announcements', form);
         toast.success('Announcement sent to students! 📢');
       }
       setForm({ subjectId: '', title: '', body: '' });
@@ -43,7 +57,7 @@ export default function TeacherAnnouncements() {
       setEditId(null);
       
       // refetch to get updated populate fields
-      const res = await axios.get('/teacher/announcements');
+      const res = await axios.get('/faculty/announcements');
       setAnnouncements(res.data.announcements || []);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save');
@@ -53,7 +67,7 @@ export default function TeacherAnnouncements() {
   const deleteAnnouncement = async (id) => {
     if (!window.confirm('Delete this announcement?')) return;
     try {
-      await axios.delete(`/teacher/announcements/${id}`);
+      await axios.delete(`/faculty/announcements/${id}`);
       setAnnouncements(prev => prev.filter(a => a._id !== id));
       toast.success('Deleted announcement');
     } catch (err) {
@@ -98,12 +112,20 @@ export default function TeacherAnnouncements() {
             <Bell size={16} className="text-purple-600" />{editId ? 'Edit Announcement' : 'Create Announcement'}
           </h2>
 
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Subject (optional — blank = all your subjects)</label>
-            <select className="input" value={form.subjectId} onChange={e => setForm({...form, subjectId: e.target.value})}>
-              <option value="">📢 All My Subjects</option>
-              {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Year</label>
+              <select className="input" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Subject (optional — blank = all {filterYear} subjects)</label>
+              <select className="input" value={form.subjectId} onChange={e => setForm({...form, subjectId: e.target.value})}>
+                <option value="">📢 All {filterYear} Subjects</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
+              </select>
+            </div>
           </div>
 
           <div>

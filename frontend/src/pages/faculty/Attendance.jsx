@@ -7,8 +7,12 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
 
-export default function TeacherAttendance() {
-  const [subjects, setSubjects] = useState([]);
+export default function FacultyAttendance() {
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [filterYear, setFilterYear] = useState('');
+  
+  const subjects = allSubjects.filter(s => s.class === filterYear);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [month, setMonth] = useState(currentMonth);
   const [year, setYear] = useState(currentYear);
@@ -17,6 +21,10 @@ export default function TeacherAttendance() {
   const [downloading, setDownloading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState('view'); // view | generate
+  const [viewMode, setViewMode] = useState('monthly'); // monthly | daily
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedType, setSelectedType] = useState('all');
+  const [dailyRecords, setDailyRecords] = useState([]);
 
   // Code generation state
   const [codeSubject, setCodeSubject] = useState('');
@@ -28,8 +36,29 @@ export default function TeacherAttendance() {
   const [codeTimer, setCodeTimer] = useState(null);
 
   useEffect(() => {
-    axios.get('/teacher/subjects').then(r => setSubjects(r.data.subjects));
+    axios.get('/faculty/subjects').then(r => {
+      const subs = r.data.subjects || [];
+      setAllSubjects(subs);
+      const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
+      setAvailableYears(years);
+      if (years.length > 0) {
+        setFilterYear(years[0]);
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.find(s => s._id === selectedSubject)) {
+      setSelectedSubject(subjects[0]._id);
+    } else if (subjects.length === 0) {
+      setSelectedSubject('');
+    }
+    if (subjects.length > 0 && !subjects.find(s => s._id === codeSubject)) {
+      setCodeSubject(subjects[0]._id);
+    } else if (subjects.length === 0) {
+      setCodeSubject('');
+    }
+  }, [filterYear, allSubjects]);
 
   // Code countdown timer
   useEffect(() => {
@@ -49,7 +78,7 @@ export default function TeacherAttendance() {
     if (!codeSubject) { toast.error('Select a subject'); return; }
     setGenerating(true);
     try {
-      const res = await axios.post('/teacher/attendance/generate-code', {
+      const res = await axios.post('/faculty/attendance/generate-code', {
         subjectId: codeSubject, type: codeType, durationMinutes: codeMinutes
       });
       setGeneratedCode(res.data.code);
@@ -64,8 +93,15 @@ export default function TeacherAttendance() {
     if (!selectedSubject) { toast.error('Please select a subject'); return; }
     setLoading(true);
     try {
-      const res = await axios.get(`/teacher/attendance?subjectId=${selectedSubject}&month=${month}&year=${year}`);
+      let url = `/faculty/attendance?subjectId=${selectedSubject}&type=${selectedType}`;
+      if (viewMode === 'monthly') {
+        url += `&month=${month}&year=${year}`;
+      } else {
+        url += `&date=${selectedDate}`;
+      }
+      const res = await axios.get(url);
       setSummary(res.data.summary);
+      setDailyRecords(res.data.dailyRecords || []);
       setSearched(true);
     } catch (err) {
       toast.error('Failed to load attendance');
@@ -75,8 +111,31 @@ export default function TeacherAttendance() {
   const toggleStatus = async (studentId, currentStatus) => {
     try {
       const newStatus = currentStatus === 'present' ? 'absent' : 'present';
-      await axios.put('/teacher/attendance/mark', { studentId, subjectId: selectedSubject, month, year, status: newStatus });
-      setSummary(prev => prev.map(s => s.student._id === studentId ? { ...s, status: newStatus } : s));
+      const payload = { 
+        studentId, 
+        subjectId: selectedSubject, 
+        status: newStatus,
+        type: selectedType === 'all' ? 'theory' : selectedType 
+      };
+      
+      if (viewMode === 'monthly') {
+        payload.month = month;
+        payload.year = year;
+      } else {
+        payload.date = selectedDate;
+      }
+
+      await axios.put('/faculty/attendance/mark', payload);
+      
+      // Update locally
+      if (viewMode === 'daily') {
+        setDailyRecords(prev => prev.map(r => r.student._id === studentId ? { ...r, status: newStatus } : r));
+      }
+      
+      // Refresh summary to keep percentages accurate
+      const res = await axios.get(`/faculty/attendance?subjectId=${selectedSubject}&month=${month}&year=${year}&type=${selectedType}`);
+      setSummary(res.data.summary);
+      
       toast.success('Status updated');
     } catch (err) { toast.error('Failed to update'); }
   };
@@ -129,12 +188,21 @@ export default function TeacherAttendance() {
             <h2 className="font-semibold text-gray-800">Generate Attendance Code</h2>
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Subject</label>
-            <select className="input" value={codeSubject} onChange={e => setCodeSubject(e.target.value)}>
-              <option value="">-- Select Subject --</option>
-              {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Year</label>
+              <select className="input cursor-pointer" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+                {availableYears.length === 0 && <option value="">No Years</option>}
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Subject</label>
+              <select className="input cursor-pointer" value={codeSubject} onChange={e => setCodeSubject(e.target.value)}>
+                <option value="">-- Select Subject --</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -192,21 +260,53 @@ export default function TeacherAttendance() {
       {activeTab === 'view' && (
         <>
           <div className="card">
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <select className="input sm:col-span-2" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
+            <div className="flex items-center justify-between mb-4 bg-gray-50 p-2 rounded-xl border border-gray-100">
+              <div className="flex gap-1 flex-1">
+                {['monthly', 'daily'].map(m => (
+                  <button key={m} onClick={() => setViewMode(m)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all capitalize shadow-sm ${viewMode === m ? 'bg-white text-blue-600 border border-blue-100' : 'text-gray-400 border border-transparent'}`}>
+                    {m === 'monthly' ? '📅 Monthly Summary' : '📍 Daily Record'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+              <select className="input sm:col-span-1" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+                {availableYears.length === 0 && <option value="">No Years</option>}
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              
+              <select className="input sm:col-span-1" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
                 <option value="">-- Select Subject --</option>
                 {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
               </select>
-              <select className="input" value={month} onChange={e => setMonth(parseInt(e.target.value))}>
-                {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+              
+              <select className="input" value={selectedType} onChange={e => setSelectedType(e.target.value)}>
+                <option value="all">All Types</option>
+                <option value="theory">Theory Only</option>
+                <option value="practical">Practical Only</option>
               </select>
-              <select className="input" value={year} onChange={e => setYear(parseInt(e.target.value))}>
-                {[currentYear, currentYear - 1, currentYear - 2].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+
+              {viewMode === 'monthly' ? (
+                <>
+                  <select className="input" value={month} onChange={e => setMonth(parseInt(e.target.value))}>
+                    {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                  </select>
+                  <select className="input" value={year} onChange={e => setYear(parseInt(e.target.value))}>
+                    {[currentYear, currentYear - 1, currentYear - 2].map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </>
+              ) : (
+                <div className="sm:col-span-2">
+                  <input type="date" className="input" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                </div>
+              )}
             </div>
+
             <div className="flex gap-3 mt-4">
               <button onClick={fetchAttendance} disabled={loading} className="btn-primary flex items-center gap-2 flex-1">
-                <Search size={16} />{loading ? 'Loading...' : 'View Attendance'}
+                <Search size={16} />{loading ? 'Loading...' : `View ${viewMode === 'daily' ? 'Daily' : 'Monthly'} Attendance`}
               </button>
               {searched && (
                 <>
@@ -238,7 +338,10 @@ export default function TeacherAttendance() {
               <div className="card">
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                   <Users size={16} className="text-blue-600" />
-                  {MONTHS[month - 1]} {year} — Attendance Details
+                  {viewMode === 'daily' 
+                    ? `Daily Attendance — ${new Date(selectedDate).toLocaleDateString()}`
+                    : `${MONTHS[month - 1]} ${year} — Attendance Summary`
+                  }
                 </h2>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -246,38 +349,74 @@ export default function TeacherAttendance() {
                       <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                         <th className="pb-3 font-medium">Roll No</th>
                         <th className="pb-3 font-medium">Student Name</th>
-                        <th className="pb-3 font-medium text-center">Present</th>
-                        <th className="pb-3 font-medium text-center">Total</th>
-                        <th className="pb-3 font-medium text-center">%</th>
-                        <th className="pb-3 font-medium text-center">Status</th>
+                        {viewMode === 'monthly' ? (
+                          <>
+                            <th className="pb-3 font-medium text-center">Present</th>
+                            <th className="pb-3 font-medium text-center">Total</th>
+                            <th className="pb-3 font-medium text-center">%</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="pb-3 font-medium text-center">Type</th>
+                            <th className="pb-3 font-medium text-center">Method</th>
+                          </>
+                        )}
+                        <th className="pb-3 font-medium text-center">Branch</th>
+                        <th className="pb-3 font-medium text-center">{viewMode === 'daily' ? 'Mark Status' : 'Overview'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {summary.map((s, i) => {
-                        const pct = parseFloat(s.percentage);
-                        return (
-                          <tr key={i} className="hover:bg-gray-50 transition-colors">
-                            <td className="py-3 text-xs text-gray-400">{s.student.rollNo || '-'}</td>
-                            <td className="py-3 font-medium text-gray-700">{s.student.name}</td>
-                            <td className="py-3 text-center text-green-600 font-medium">{s.present}</td>
-                            <td className="py-3 text-center text-gray-400">{s.total}</td>
-                            <td className="py-3 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                                  <div className={`h-1.5 rounded-full ${pct >= 75 ? 'bg-green-500' : 'bg-red-400'}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                      {(viewMode === 'monthly' ? summary : dailyRecords).map((r, i) => {
+                        if (viewMode === 'monthly') {
+                          const pct = parseFloat(r.percentage);
+                          return (
+                            <tr key={i} className="hover:bg-gray-50 transition-colors">
+                              <td className="py-3 text-xs text-gray-400">{r.student.rollNo || '-'}</td>
+                              <td className="py-3 font-medium text-gray-700">{r.student.name}</td>
+                              <td className="py-3 text-center text-green-600 font-medium">{r.present}</td>
+                              <td className="py-3 text-center text-gray-400">{r.total}</td>
+                              <td className="py-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                                    <div className={`h-1.5 rounded-full ${pct >= 75 ? 'bg-green-500' : 'bg-red-400'}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                                  </div>
+                                <span className={`text-sm font-bold ${pct >= 75 ? 'text-green-600' : 'text-red-500'}`}>{r.percentage}%</span>
                                 </div>
-                                <span className={`text-sm font-bold ${pct >= 75 ? 'text-green-600' : 'text-red-500'}`}>{s.percentage}%</span>
-                              </div>
-                            </td>
-                            <td className="py-3 text-center">
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${pct >= 75 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                                {pct >= 75 ? '✓ Regular' : '⚠ Low'}
-                              </span>
-                            </td>
-                          </tr>
-                        );
+                              </td>
+                              <td className="py-3 text-center text-xs text-gray-500">{r.student.branch || 'IT'}</td>
+                              <td className="py-3 text-center">
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${pct >= 75 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                  {pct >= 75 ? '✓ Regular' : '⚠ Low'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                          // Daily View row
+                          const isPresent = r.status === 'present';
+                          return (
+                            <tr key={i} className="hover:bg-gray-50 transition-colors">
+                              <td className="py-3 text-xs text-gray-400">{r.student.rollNo || '-'}</td>
+                              <td className="py-3 font-medium text-gray-700">{r.student.name}</td>
+                              <td className="py-3 text-center capitalize">{r.type}</td>
+                              <td className="py-3 text-center text-xs text-gray-400 italic">{r.markedVia || 'unmarked'}</td>
+                              <td className="py-3 text-center text-xs text-gray-500">{r.student.branch || 'IT'}</td>
+                              <td className="py-3 text-center">
+                                <button
+                                  onClick={() => toggleStatus(r.student._id, r.status)}
+                                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto ${
+                                    isPresent ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-600 border border-red-200'
+                                  }`}
+                                >
+                                  {isPresent ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                                  {isPresent ? 'PRESENT' : 'ABSENT'}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        }
                       })}
-                      {summary.length === 0 && <tr><td colSpan={6} className="text-center py-8 text-gray-400">No attendance data found</td></tr>}
+                      {(viewMode === 'monthly' ? summary : dailyRecords).length === 0 && <tr><td colSpan={6} className="text-center py-8 text-gray-400">No attendance data found</td></tr>}
                     </tbody>
                   </table>
                 </div>

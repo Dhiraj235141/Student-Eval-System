@@ -12,7 +12,7 @@ export default function StudentResults() {
   const [subjects, setSubjects] = useState([]);
 
   useEffect(() => {
-    axios.get('/student/subjects').then(r => setSubjects(r.data.subjects || [])).catch(() => {});
+    axios.get('/student/subjects').then(r => setSubjects(r.data.subjects || [])).catch(() => { });
     fetchResults();
   }, [selectedSubject]);
 
@@ -68,8 +68,10 @@ export default function StudentResults() {
           <div className="flex items-center gap-2">
             <Filter size={14} className="text-gray-400" />
             <select className="input text-sm py-1.5 w-44" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
-              <option value="">All Subjects</option>
-              {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+              {subjects.map((s, i) => {
+                if (selectedSubject === '' && i === 0) setSelectedSubject(s._id);
+                return <option key={s._id} value={s._id}>{s.name}</option>;
+              })}
             </select>
           </div>
         </div>
@@ -108,7 +110,7 @@ export default function StudentResults() {
                     <XAxis dataKey="test" tick={{ fontSize: 11 }} />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(val, _, props) => [val + '/10', props.payload.topic || 'Score']} />
-                    <Bar dataKey="score" radius={[4,4,0,0]}
+                    <Bar dataKey="score" radius={[4, 4, 0, 0]}
                       fill="#2563EB"
                       label={{ position: 'top', fontSize: 10, fill: '#6B7280' }} />
                   </BarChart>

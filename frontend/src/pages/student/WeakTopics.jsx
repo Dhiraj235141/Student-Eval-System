@@ -8,6 +8,7 @@ export default function WeakTopics() {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState({}); // topic -> { loading, content }
   const [expanded, setExpanded] = useState({});
+  const [selectedSubject, setSelectedSubject] = useState('all');
 
   useEffect(() => { fetchWeakTopics(); }, []);
 
@@ -28,15 +29,19 @@ export default function WeakTopics() {
     }
     setExpanded(prev => ({ ...prev, [topicKey]: true }));
 
-    if (notes[topicKey]) return; // already loaded
+    if (notes[topicKey]?.content) return; // already loaded
+
+    // Clean topic name for better AI results (remove numbers like 3.4 or Unit 1)
+    const cleanTopicName = topicName.replace(/^([0-9\.]+|Unit\s*[0-9]+|Chapter\s*[0-9]+)[:\s\-]*/i, '').trim();
 
     setNotes(prev => ({ ...prev, [topicKey]: { loading: true, content: null } }));
     try {
-      const res = await axios.post('/ai/study-notes', { topic: topicName });
+      const res = await axios.post('/ai/study-notes', { topic: cleanTopicName });
       setNotes(prev => ({ ...prev, [topicKey]: { loading: false, content: res.data.notes } }));
     } catch (err) {
+      console.error('AI Notes Error:', err);
       setNotes(prev => ({ ...prev, [topicKey]: { loading: false, content: null, error: true } }));
-      toast.error('Could not load study notes');
+      toast.error('Could not load study notes for: ' + cleanTopicName);
     }
   };
 
@@ -54,10 +59,31 @@ export default function WeakTopics() {
             <Brain size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-800 text-lg">Weak Topics</h1>
+            <h1 className="font-bold text-gray-800 text-lg">Weak Topics Analysis</h1>
             <p className="text-xs text-gray-400">AI-identified areas to focus on + study notes</p>
           </div>
         </div>
+
+        {/* Filter Dropdown */}
+        {!loading && weakTopics.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
+            <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <BookOpen size={16} className="text-orange-500" />
+              Filter by Subject:
+            </label>
+            <select 
+              value={selectedSubject} 
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all min-w-[200px]"
+            >
+              {[...new Set(weakTopics.map(t => t.subjectName))].map((s, i) => {
+                // Auto-select first subject if currently 'all'
+                if (selectedSubject === 'all' && i === 0) setSelectedSubject(s);
+                return <option key={s} value={s}>{s}</option>;
+              })}
+            </select>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -86,12 +112,14 @@ export default function WeakTopics() {
             ))}
           </div>
 
-          <div className="space-y-3">
-            {weakTopics.map((item, i) => {
-              const topicKey = item.topic;
-              const colors = getUrgencyColor(item.failCount);
-              const isExpanded = expanded[topicKey];
-              const note = notes[topicKey];
+          <div className="space-y-3 mt-4">
+            {weakTopics
+              .filter(t => selectedSubject === 'all' || t.subjectName === selectedSubject)
+              .map((item, i) => {
+                const topicKey = `${item.subjectId}-${item.topic}`;
+                const colors = getUrgencyColor(item.failCount);
+                const isExpanded = expanded[topicKey];
+                const note = notes[topicKey];
 
               return (
                 <div key={i} className={`rounded-2xl border-2 ${colors.border} ${colors.bg} overflow-hidden transition-all`}>
@@ -103,7 +131,8 @@ export default function WeakTopics() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-800 truncate">{item.topic}</p>
-                        <p className="text-xs text-gray-500">Failed {item.failCount} time{item.failCount > 1 ? 's' : ''} in tests</p>
+                        <p className="text-xs text-gray-400 font-medium">Subject: <span className="text-orange-600">{item.subjectName}</span></p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Failed {item.failCount} time{item.failCount > 1 ? 's' : ''} in tests</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0 ml-3">

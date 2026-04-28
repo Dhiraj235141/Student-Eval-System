@@ -30,9 +30,15 @@ const drawHeader = (doc, title, subtitle) => {
   doc.rect(0, 0, doc.page.width, 100).fill(COLORS.primary);
   // Accent bar
   doc.rect(0, 95, doc.page.width, 5).fill('#1D4ED8');
-  // Logo circle
-  doc.circle(50, 50, 22).fill('#1D4ED8');
-  doc.fontSize(14).fillColor(COLORS.white).font('Helvetica-Bold').text('SES', 39, 43);
+  // Logo
+  try {
+    const logoPath = require('path').join(__dirname, '../../frontend/public/logo.png');
+    doc.image(logoPath, 35, 25, { width: 40 });
+  } catch (e) {
+    // Fallback if image not found
+    doc.circle(50, 50, 22).fill('#1D4ED8');
+    doc.fontSize(14).fillColor(COLORS.white).font('Helvetica-Bold').text('SES', 39, 43);
+  }
   // Title
   doc.fontSize(20).fillColor(COLORS.white).font('Helvetica-Bold').text(title, 85, 28);
   doc.fontSize(10).fillColor('#BFDBFE').font('Helvetica').text(subtitle, 85, 54);
@@ -114,7 +120,7 @@ const drawTable = (doc, headers, rows, colWidths) => {
         else if (v >= 5) color = COLORS.warning;
         else color = COLORS.danger;
       }
-      if (ci === 4 && ['Excellent','Good','Average','Below Average','Poor'].includes(cellStr)) {
+      if (ci === 4 && ['Excellent', 'Good', 'Average', 'Below Average', 'Poor'].includes(cellStr)) {
         if (cellStr === 'Excellent') color = COLORS.success;
         else if (cellStr === 'Good') color = '#059669';
         else if (cellStr === 'Average') color = COLORS.warning;

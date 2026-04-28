@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Hash, BookOpen, Key, Save, Camera, CheckCircle } from 'lucide-react';
+import { X, User, Mail, Hash, BookOpen, Key, Save, Camera, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -14,11 +14,14 @@ export default function ProfilePanel({ open, onClose }) {
     year: '',
     branch: '',
     division: '',
+    department: '',
     profileImage: '',
   });
   const [passForm, setPassForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
-  const [showPassAll, setShowPassAll] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -29,6 +32,7 @@ export default function ProfilePanel({ open, onClose }) {
         year: user.year || '',
         branch: user.branch || '',
         division: user.division || '',
+        department: user.department || '',
         profileImage: user.profileImage || '',
       });
     }
@@ -83,8 +87,8 @@ export default function ProfilePanel({ open, onClose }) {
     }
   };
 
-  const roleColors = { admin: 'from-purple-500 to-purple-700', teacher: 'from-blue-500 to-blue-700', student: 'from-emerald-500 to-emerald-700' };
-  const roleLabels = { admin: 'Administrator', teacher: 'Teacher', student: 'Student' };
+  const roleColors = { admin: 'from-purple-500 to-purple-700', faculty: 'from-blue-500 to-blue-700', student: 'from-emerald-500 to-emerald-700' };
+  const roleLabels = { admin: 'Administrator', faculty: 'Faculty', student: 'Student' };
   const YEARS = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
   const BRANCHES = ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Chemical', 'Other'];
 
@@ -120,7 +124,7 @@ export default function ProfilePanel({ open, onClose }) {
                 )}
               </div>
               <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 shadow-sm border border-gray-100">
-                <Camera size={12} className={`text-${user?.role === 'admin' ? 'purple' : user?.role === 'teacher' ? 'blue' : 'emerald'}-600`} />
+                <Camera size={12} className={`text-${user?.role === 'admin' ? 'purple' : user?.role === 'faculty' ? 'blue' : 'emerald'}-600`} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>
             </div>
@@ -128,6 +132,7 @@ export default function ProfilePanel({ open, onClose }) {
               <p className="text-white font-bold">{user?.name}</p>
               <p className="text-white/70 text-xs">{roleLabels[user?.role]}</p>
               {user?.rollNo && <p className="text-white/60 text-xs font-mono mt-0.5">{user.rollNo}</p>}
+              {user?.role === 'faculty' && user?.department && <p className="text-white/60 text-xs font-mono mt-0.5">{user.department}</p>}
             </div>
           </div>
         </div>
@@ -176,29 +181,33 @@ export default function ProfilePanel({ open, onClose }) {
                 </div>
               </div>
 
+              {user?.role === 'faculty' && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1.5 block flex items-center gap-1.5">
+                    <BookOpen size={12} /> Department
+                  </label>
+                  <input className="input" value={form.department} onChange={e => setForm({...form, department: e.target.value})} placeholder="e.g. Computer Science" />
+                </div>
+              )}
+
               {user?.role === 'student' && (
                 <>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1.5 block flex items-center gap-1.5">
                       <Hash size={12} /> Roll Number
                     </label>
-                    <input className="input" value={form.rollNo} onChange={e => setForm({...form, rollNo: e.target.value})} placeholder="e.g. 24CS001" />
+                    <input className="input bg-gray-50 text-gray-500 cursor-not-allowed" value={form.rollNo} readOnly disabled />
+                    <p className="text-[10px] text-gray-400 mt-1 italic">Contact admin to change academic details</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1.5 block flex items-center gap-1.5">
                       <BookOpen size={12} /> Year
                     </label>
-                    <select className="input" value={form.year} onChange={e => setForm({...form, year: e.target.value})}>
-                      <option value="">-- Select Year --</option>
-                      {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
+                    <input className="input bg-gray-50 text-gray-500 cursor-not-allowed" value={form.year} readOnly disabled />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1.5 block">Branch</label>
-                    <select className="input" value={form.branch} onChange={e => setForm({...form, branch: e.target.value})}>
-                      <option value="">-- Select Branch --</option>
-                      {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
+                    <input className="input bg-gray-50 text-gray-500 cursor-not-allowed" value={form.branch} readOnly disabled />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1.5 block">Division</label>
@@ -217,25 +226,40 @@ export default function ProfilePanel({ open, onClose }) {
                 <label className="text-xs font-medium text-gray-500 mb-1.5 block flex items-center gap-1.5">
                   <Key size={12} /> Current Password
                 </label>
-                <input className="input" type="password" value={passForm.currentPassword}
-                  onChange={e => setPassForm({...passForm, currentPassword: e.target.value})} placeholder="••••••••" />
+                <div className="relative">
+                  <input className="input pr-10" type={showCurrent ? 'text' : 'password'} value={passForm.currentPassword}
+                    onChange={e => setPassForm({...passForm, currentPassword: e.target.value})} placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 mb-1.5 block flex items-center gap-1.5">
                   <Key size={12} /> New Password
                 </label>
-                <input className="input" type="password" value={passForm.newPassword}
-                  onChange={e => setPassForm({...passForm, newPassword: e.target.value})} placeholder="Min 6 characters" />
+                <div className="relative">
+                  <input className="input pr-10" type={showNew ? 'text' : 'password'} value={passForm.newPassword}
+                    onChange={e => setPassForm({...passForm, newPassword: e.target.value})} placeholder="Min 6 characters" />
+                  <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 mb-1.5 block flex items-center gap-1.5">
                   <CheckCircle size={12} /> Confirm New Password
                 </label>
-                <input className="input" type="password" value={passForm.confirmPassword}
-                  onChange={e => setPassForm({...passForm, confirmPassword: e.target.value})} placeholder="Repeat new password" />
+                <div className="relative">
+                  <input className="input pr-10" type={showConfirm ? 'text' : 'password'} value={passForm.confirmPassword}
+                    onChange={e => setPassForm({...passForm, confirmPassword: e.target.value})} placeholder="Repeat new password" />
+                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
               {passForm.newPassword && passForm.confirmPassword && passForm.newPassword !== passForm.confirmPassword && (
-                <p className="text-red-500 text-xs">Passwords do not match</p>
+                <p className="text-red-500 text-xs font-medium mt-1">Passwords do not match</p>
               )}
               <button onClick={changePassword} disabled={saving} className="w-full btn-primary py-3 flex items-center justify-center gap-2 mt-2">
                 {saving ? 'Changing...' : 'Change Password'}

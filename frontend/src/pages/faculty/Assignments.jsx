@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { FileText, Plus, Brain, Send, Users, Loader, X, Clock, Edit2, BookOpen, CalendarClock, RefreshCw, Trash2, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, BACKEND_URL } from '../../context/AuthContext';
 
 export default function FacultyAssignments() {
   const { user } = useAuth();
@@ -63,7 +63,9 @@ export default function FacultyAssignments() {
       setAllSubjects(subs);
       setActiveSemesterName(res.data.activeSemester || '');
       const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
-      setAvailableYears(years);
+      const yearOrder = { 'FY': 1, 'First Year': 1, 'SY': 2, 'Second Year': 2, 'TY': 3, 'Third Year': 3, 'Fourth Year': 4 };
+      const sortedYears = years.sort((a, b) => (yearOrder[a] || 99) - (yearOrder[b] || 99));
+      setAvailableYears(sortedYears);
       if (years.length > 0) {
         setFilterYear(years[0]);
       }
@@ -546,7 +548,6 @@ export default function FacultyAssignments() {
                   value={selectedSubject}
                   onChange={e => setSelectedSubject(e.target.value)}
                 >
-                  <option value="">-- Select Subject --</option>
                   {subjects.map(s => (
                     <option key={s._id} value={s._id}>{s.name} ({s.code})</option>
                   ))}
@@ -665,9 +666,9 @@ export default function FacultyAssignments() {
               
               <div className="flex flex-1 flex-col sm:flex-row items-start sm:items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">Year:</label>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Year</label>
                   <select 
-                    className="input py-1.5 text-xs font-bold border-gray-200 focus:border-blue-400 w-24"
+                    className="input py-2 text-sm font-bold border-gray-200 focus:border-blue-400 w-32 bg-white shadow-sm hover:border-gray-300 transition-colors"
                     value={filterYear}
                     onChange={e => setFilterYear(e.target.value)}
                   >
@@ -677,10 +678,10 @@ export default function FacultyAssignments() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-1">
-                  <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">Subject:</label>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Subject</label>
                   <div className="relative flex-1 max-w-xs">
                     <select
-                      className="input py-1.5 pr-8 appearance-none cursor-pointer text-xs font-bold border-blue-200 text-blue-700 bg-white focus:border-blue-400"
+                      className="input py-2 pr-10 appearance-none cursor-pointer text-sm font-bold border-blue-200 text-blue-700 bg-white focus:border-blue-400 shadow-sm hover:shadow-md transition-all"
                       value={filterSubjectId}
                       onChange={e => setFilterSubjectId(e.target.value)}
                     >
@@ -692,8 +693,8 @@ export default function FacultyAssignments() {
                         ))
                       )}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
-                      <BookOpen size={12} className="text-blue-400" />
+                    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                      <BookOpen size={14} className="text-blue-500" />
                     </div>
                   </div>
                 </div>
@@ -816,7 +817,7 @@ export default function FacultyAssignments() {
                                    {s.status !== 'pending' && (
                                      <div className="flex items-center justify-end gap-2">
                                        <button onClick={() => saveManualScore(a._id, s)} className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-2 py-1.5 rounded transition-colors">Save</button>
-                                       {s.pdfPath && <a href={`http://localhost:5000/uploads/assignments/${s.pdfPath}`} target="_blank" rel="noreferrer" className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium px-2 py-1.5 rounded flex items-center gap-1 transition-colors border border-gray-200"><FileText size={12}/> View PDF</a>}
+                                       {s.pdfPath && <a href={`${BACKEND_URL}/uploads/assignments/${s.pdfPath}`} target="_blank" rel="noreferrer" className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium px-2 py-1.5 rounded flex items-center gap-1 transition-colors border border-gray-200"><FileText size={12}/> View PDF</a>}
                                      </div>
                                    )}
                                 </td>

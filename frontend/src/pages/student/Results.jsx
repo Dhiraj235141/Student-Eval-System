@@ -138,42 +138,81 @@ export default function StudentResults() {
           <div className="card">
             <h2 className="font-semibold text-gray-700 mb-4">All Test Results</h2>
             {results.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                      <th className="pb-3 font-medium">Date</th>
-                      <th className="pb-3 font-medium">Subject</th>
-                      <th className="pb-3 font-medium">Topic</th>
-                      <th className="pb-3 font-medium text-center">Score</th>
-                      <th className="pb-3 font-medium text-center">Easy</th>
-                      <th className="pb-3 font-medium text-center">Medium</th>
-                      <th className="pb-3 font-medium text-center">Hard</th>
-                      <th className="pb-3 font-medium text-center">Grade</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {results.map((r, i) => (
-                      <tr key={i} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</td>
-                        <td className="py-3 text-gray-600">{r.subject?.name}</td>
-                        <td className="py-3 text-gray-600">{r.test?.topic || '-'}</td>
-                        <td className="py-3 text-center font-bold">
-                          <span className={r.score >= 7 ? 'text-green-600' : r.score >= 5 ? 'text-yellow-600' : 'text-red-500'}>
-                            {r.score}/10
-                          </span>
-                        </td>
-                        <td className="py-3 text-center text-xs text-green-600">{r.easyScore ?? '-'}/4</td>
-                        <td className="py-3 text-center text-xs text-yellow-600">{r.mediumScore ?? '-'}/4</td>
-                        <td className="py-3 text-center text-xs text-red-500">{r.hardScore ?? '-'}/2</td>
-                        <td className="py-3 text-center">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${gradeColor(r.grade)}`}>{r.grade}</span>
-                        </td>
+              <>
+                {/* Results Desktop Table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                        <th className="pb-3 font-medium">Date</th>
+                        <th className="pb-3 font-medium">Subject</th>
+                        <th className="pb-3 font-medium">Topic</th>
+                        <th className="pb-3 font-medium text-center">Score</th>
+                        <th className="pb-3 font-medium text-center">Easy</th>
+                        <th className="pb-3 font-medium text-center">Medium</th>
+                        <th className="pb-3 font-medium text-center">Hard</th>
+                        <th className="pb-3 font-medium text-center">Grade</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {results.map((r, i) => (
+                        <tr key={i} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-3 text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</td>
+                          <td className="py-3 text-gray-600">{r.subject?.name}</td>
+                          <td className="py-3 text-gray-600">{r.test?.topic || '-'}</td>
+                          <td className="py-3 text-center font-bold">
+                            <span className={r.score >= 7 ? 'text-green-600' : r.score >= 5 ? 'text-yellow-600' : 'text-red-500'}>
+                              {r.score}/10
+                            </span>
+                          </td>
+                          <td className="py-3 text-center text-xs text-green-600">{r.easyScore ?? '-'}/4</td>
+                          <td className="py-3 text-center text-xs text-yellow-600">{r.mediumScore ?? '-'}/4</td>
+                          <td className="py-3 text-center text-xs text-red-500">{r.hardScore ?? '-'}/2</td>
+                          <td className="py-3 text-center">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${gradeColor(r.grade)}`}>{r.grade}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Results Mobile Cards */}
+                <div className="sm:hidden space-y-4">
+                  {results.map((r, i) => (
+                    <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-xs text-gray-400 mb-0.5">{new Date(r.createdAt).toLocaleDateString()}</p>
+                          <h3 className="font-bold text-gray-800 leading-tight">{r.test?.topic || 'General Test'}</h3>
+                          <p className="text-[10px] text-primary font-bold uppercase tracking-wider">{r.subject?.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-2xl font-black ${r.score >= 7 ? 'text-green-600' : r.score >= 5 ? 'text-yellow-600' : 'text-red-500'}`}>
+                            {r.score}<span className="text-[10px] text-gray-400 font-normal ml-0.5">/10</span>
+                          </p>
+                          <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${gradeColor(r.grade)}`}>{r.grade}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200/50">
+                        <div className="text-center">
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Easy</p>
+                          <p className="text-xs font-bold text-green-600">{r.easyScore ?? '-'}/4</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Medium</p>
+                          <p className="text-xs font-bold text-yellow-600">{r.mediumScore ?? '-'}/4</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Hard</p>
+                          <p className="text-xs font-bold text-red-500">{r.hardScore ?? '-'}/2</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10 text-gray-400">
                 <BarChart2 size={36} className="mx-auto mb-2 opacity-30" />

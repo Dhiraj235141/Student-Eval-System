@@ -3,7 +3,8 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-axios.defaults.baseURL = `http://${window.location.hostname}:5000/api`;
+export const BACKEND_URL = `http://${window.location.hostname}:5000`;
+axios.defaults.baseURL = `${BACKEND_URL}/api`;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

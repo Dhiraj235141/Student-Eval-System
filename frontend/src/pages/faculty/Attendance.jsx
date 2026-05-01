@@ -40,7 +40,9 @@ export default function FacultyAttendance() {
       const subs = r.data.subjects || [];
       setAllSubjects(subs);
       const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
-      setAvailableYears(years);
+      const yearOrder = { 'FY': 1, 'First Year': 1, 'SY': 2, 'Second Year': 2, 'TY': 3, 'Third Year': 3, 'Fourth Year': 4 };
+      const sortedYears = years.sort((a, b) => (yearOrder[a] || 99) - (yearOrder[b] || 99));
+      setAvailableYears(sortedYears);
       if (years.length > 0) {
         setFilterYear(years[0]);
       }
@@ -272,13 +274,12 @@ export default function FacultyAttendance() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-              <select className="input sm:col-span-1" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+              <select className="input sm:col-span-1 text-sm font-bold bg-white shadow-sm" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
                 {availableYears.length === 0 && <option value="">No Years</option>}
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
               
-              <select className="input sm:col-span-1" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
-                <option value="">-- Select Subject --</option>
+              <select className="input sm:col-span-1 text-sm font-bold bg-white shadow-sm border-indigo-200 text-indigo-700" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
                 {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
               </select>
               

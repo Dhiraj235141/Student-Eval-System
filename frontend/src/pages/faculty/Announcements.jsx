@@ -28,7 +28,9 @@ export default function FacultyAnnouncements() {
       const subs = subRes.data.subjects || [];
       setAllSubjects(subs);
       const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
-      setAvailableYears(years);
+      const yearOrder = { 'FY': 1, 'First Year': 1, 'SY': 2, 'Second Year': 2, 'TY': 3, 'Third Year': 3, 'Fourth Year': 4 };
+      const sortedYears = years.sort((a, b) => (yearOrder[a] || 99) - (yearOrder[b] || 99));
+      setAvailableYears(sortedYears);
       if (years.length > 0) setFilterYear(years[0]);
       setAnnouncements(annRes.data.announcements || []);
     }).finally(() => setLoading(false));

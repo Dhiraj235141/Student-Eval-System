@@ -249,17 +249,21 @@ exports.gradeAssignmentPDF = async (filePath, maxMarks = 10, questions = [], des
     }
     const descContext = description ? `\n\nAssignment Topic/Description: ${description}` : '';
 
-    const prompt = `You are an academic evaluator. Grade this student assignment submission out of ${maxMarks} marks.${descContext}${questionContext}
+    const prompt = `You are a strict academic evaluator. Grade this student's assignment submission out of ${maxMarks} marks.
+${descContext}${questionContext}
 
 Student's submitted content:
+"""
 ${content}
+"""
 
-Grading criteria:
-- Relevance to the assignment questions/topic (40%)
-- Content accuracy and depth (30%)
-- Clarity, structure and completeness (30%)
+STRICT GRADING RULES:
+1. DATA MATCHING: The content MUST directly match the facts and technical details related to the topic/questions.
+2. ACCURACY: If the student provides generic information that doesn't match the specific requirements of the questions, deduct marks.
+3. DEPTH: High marks ONLY if the student explains "how" and "why", matching the expected academic data for this subject.
+4. If the submission is empty or completely irrelevant, give 0.
 
-Return ONLY a single number (the score) between 0 and ${maxMarks}. No text, just the number.`;
+Return ONLY a single number (the score) between 0 and ${maxMarks}. No text, no explanation, just the number.`;
 
     const raw = await callAI(prompt, 100);
     const score = parseFloat(raw.trim());
@@ -304,6 +308,32 @@ Rules:
   } catch (err) {
     console.error('AI Suggestions Error:', err.message);
     res.status(500).json({ success: false, message: 'Failed to generate suggestions.' });
+  }
+};
+
+// Refine raw weak topic strings into professional academic topics
+exports.refineWeakTopics = async (rawTopics) => {
+  try {
+    if (!rawTopics || rawTopics.length === 0) return [];
+    
+    const prompt = `You are an academic analyst. I have a list of raw topic strings where a student failed questions in an exam.
+Raw topics: ${JSON.stringify(rawTopics.slice(0, 20))}
+
+Your task:
+1. Group similar or related items.
+2. Convert them into professional, proper academic topic names (e.g., "Memory Management", "Leadership Styles").
+3. Return ONLY a valid JSON array of strings, max 5 topics.
+
+Example Input: ["1.2 memory", "RAM management", "paging system"]
+Example Output: ["Memory Management and Paging Systems"]
+
+Return ONLY the JSON array. No extra text.`;
+
+    const raw = await callAI(prompt, 500);
+    return parseJSON(raw);
+  } catch (err) {
+    console.error('AI Refine Topics Error:', err.message);
+    return rawTopics.slice(0, 5); // Fallback to raw
   }
 };
 

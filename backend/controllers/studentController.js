@@ -383,7 +383,7 @@ exports.submitAssignment = async (req, res) => {
 exports.getWeakTopics = async (req, res) => {
   try {
     const results = await TestResult.find({ student: req.user.id }).populate('subject', 'name');
-    const topicMap = {}; // topicKey -> { topic, subjectName, subjectId, count }
+    const topicMap = {}; // topicKey -> { topic, subjectName, subjectId, failCount }
 
     results.forEach(r => {
       r.weakTopics.forEach(topic => {
@@ -391,14 +391,13 @@ exports.getWeakTopics = async (req, res) => {
         const subjectName = r.subject?.name || 'Unknown Subject';
         
         // Split composite topic strings into granular sub-topics
-        // Handles: "Topic A, Topic B", "Topic A; Topic B", "Topic A. Topic B"
         const subTopics = topic
           .split(/[,;\n]|\.(?=\s|$)/) 
-          .map(s => s.trim().replace(/^[\.\s]+|[\.\s]+$/g, '')) // Trim and remove leading/trailing dots
-          .filter(s => s.length > 3); // Ignore very short or empty strings
+          .map(s => s.trim().replace(/^[\.\s]+|[\.\s]+$/g, ''))
+          .filter(s => s.length > 3);
 
         subTopics.forEach(sub => {
-          const key = `${subjectId}-${sub.toLowerCase()}`; // Case-insensitive matching
+          const key = `${subjectId}-${sub.toLowerCase()}`;
           if (!topicMap[key]) {
             topicMap[key] = { 
               topic: sub, 
@@ -412,8 +411,34 @@ exports.getWeakTopics = async (req, res) => {
       });
     });
 
-    const weakTopics = Object.values(topicMap)
-      .sort((a, b) => b.failCount - a.failCount);
+    const weakTopicsRaw = Object.values(topicMap).sort((a, b) => b.failCount - a.failCount);
+
+    // AI REFINEMENT: Group and rename topics professionally
+    let weakTopics = weakTopicsRaw;
+    try {
+      const aiController = require('./aiController');
+      if (aiController.refineWeakTopics && weakTopicsRaw.length > 0) {
+        // We refine the top 15 most frequent raw failures into professional topics
+        const topRaw = weakTopicsRaw.slice(0, 15).map(t => t.topic);
+        const refinedNames = await aiController.refineWeakTopics(topRaw);
+        
+        // Map back to the refined names while keeping the subject data
+        if (refinedNames && Array.isArray(refinedNames)) {
+          weakTopics = refinedNames.map((name, i) => {
+            // Find a representative raw item for subject info
+            const representative = weakTopicsRaw.find(r => name.toLowerCase().includes(r.topic.toLowerCase())) || weakTopicsRaw[0];
+            return {
+              topic: name,
+              subjectName: representative?.subjectName || 'Various',
+              subjectId: representative?.subjectId || 'mixed',
+              failCount: Math.max(...weakTopicsRaw.map(t => t.failCount)) - i // Artificial but ordered
+            };
+          });
+        }
+      }
+    } catch (aiErr) {
+      console.warn('Weak Topic AI Refinement failed:', aiErr.message);
+    }
 
     res.json({ success: true, weakTopics });
   } catch (err) {

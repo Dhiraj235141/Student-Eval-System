@@ -101,7 +101,7 @@ const OTPInput = ({ value, onChange }) => {
           value={digits[i] || ''}
           onChange={e => handleChange(e, i)}
           onKeyDown={e => handleKey(e, i)}
-          className={`w-11 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-0 ${digits[i]
+          className={`w-9 h-11 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-0 ${digits[i]
             ? 'border-primary bg-blue-50 text-primary'
             : 'border-gray-200 bg-white text-gray-800 focus:border-primary'
             }`}

@@ -31,14 +31,16 @@ const sendFeedbackEmails = async (student, feedback) => {
     await transporter.sendMail({
       from: `"Student Eval System" <${emailUser}>`,
       to: adminEmail,
-      subject: `NEW ${roleTitle} FEEDBACK: ${feedback.type} - ${feedback.subject}`,
+      subject: `NEW ${roleTitle} FEEDBACK: ${feedback.type} - ${feedback.subject || feedback.type}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #2563EB;">New ${roleTitle.toLowerCase().charAt(0).toUpperCase() + roleTitle.toLowerCase().slice(1)} Feedback</h2>
           <p><strong>From:</strong> ${student.name} (${student.email})</p>
-          <p><strong>Role:</strong> ${student.role}</p>
+          <p><strong>Phone:</strong> ${feedback.phone || 'N/A'}</p>
+          <p><strong>Company/Group:</strong> ${feedback.company || 'N/A'}</p>
+          <p><strong>Role:</strong> ${student.role || 'Visitor'}</p>
           <p><strong>Type:</strong> ${feedback.type}</p>
-          <p><strong>Subject:</strong> ${feedback.subject}</p>
+          <p><strong>Subject:</strong> ${feedback.subject || feedback.type}</p>
           <hr />
           <p><strong>Message:</strong></p>
           <p style="white-space: pre-wrap;">${feedback.message}</p>
@@ -46,7 +48,7 @@ const sendFeedbackEmails = async (student, feedback) => {
       `,
     });
 
-    // 2. Acknowledgment to Student
+    // 2. Acknowledgment to Sender
     await transporter.sendMail({
       from: `"Student Eval System" <${emailUser}>`,
       to: student.email,
@@ -55,7 +57,7 @@ const sendFeedbackEmails = async (student, feedback) => {
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #2563EB;">Thank You for Your Feedback!</h2>
           <p>Hi ${student.name.split(' ')[0]},</p>
-          <p>We've received your ${feedback.type.toLowerCase()} regarding "<strong>${feedback.subject}</strong>".</p>
+          <p>We've received your ${feedback.type.toLowerCase()} regarding "<strong>${feedback.subject || feedback.type}</strong>".</p>
           <p>Our team will review it and get back to you if necessary. We typically respond within 24-48 hours.</p>
           <hr />
           <p style="color: #666; font-size: 12px;">Your original message:</p>
@@ -74,26 +76,56 @@ const sendFeedbackEmails = async (student, feedback) => {
 // @route   POST /api/feedback
 exports.submitFeedback = async (req, res) => {
   try {
-    const { type, subject, message } = req.body;
-    if (!type || !subject || !message) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+    const { type, subject, message, name, email, phone, company } = req.body;
+    
+    // Check required fields
+    if (!type || !message) {
+      return res.status(400).json({ success: false, message: 'Type and message are required' });
     }
 
-    const feedback = await Feedback.create({
-      user: req.user.id,
+    // Determine sender info
+    let feedbackData = {
       type,
-      subject,
-      message
-    });
+      subject: subject || type,
+      message,
+      phone,
+      company,
+      status: 'Pending'
+    };
 
-    const student = await User.findById(req.user.id);
-    if (student) {
-      // Send emails asynchronously
-      sendFeedbackEmails(student, feedback);
+    let senderInfo = {};
+
+    if (req.user) {
+      // Authenticated user
+      feedbackData.user = req.user.id;
+      const user = await User.findById(req.user.id);
+      senderInfo = {
+        name: user.name,
+        email: user.email,
+        role: user.role
+      };
+    } else {
+      // Visitor
+      if (!name || !email) {
+        return res.status(400).json({ success: false, message: 'Name and email are required for visitors' });
+      }
+      feedbackData.name = name;
+      feedbackData.email = email;
+      senderInfo = {
+        name,
+        email,
+        role: 'visitor'
+      };
     }
+
+    const feedback = await Feedback.create(feedbackData);
+
+    // Send emails asynchronously
+    sendFeedbackEmails(senderInfo, feedback);
 
     res.status(201).json({ success: true, message: 'Feedback submitted successfully' });
   } catch (err) {
+    console.error('[SUBMIT FEEDBACK ERROR]', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };

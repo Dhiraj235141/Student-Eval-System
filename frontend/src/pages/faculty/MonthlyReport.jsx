@@ -23,7 +23,9 @@ export default function FacultyMonthlyReport() {
       const subs = r.data.subjects || [];
       setAllSubjects(subs);
       const classes = [...new Set(subs.map(s => s.class))].filter(Boolean);
-      setAvailableClasses(classes);
+      const yearOrder = { 'FY': 1, 'First Year': 1, 'SY': 2, 'Second Year': 2, 'TY': 3, 'Third Year': 3, 'Fourth Year': 4 };
+      const sortedClasses = classes.sort((a, b) => (yearOrder[a] || 99) - (yearOrder[b] || 99));
+      setAvailableClasses(sortedClasses);
       if (classes.length > 0) setSelectedClass(classes[0]);
     });
   }, []);

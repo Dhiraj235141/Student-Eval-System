@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/layout/Sidebar';
 import { useState } from 'react';
 import LoadingScreen from './components/LoadingScreen';
+import ScrollToTop from './components/ScrollToTop';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -13,6 +14,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Landing
 import LandingPage from './pages/LandingPage';
+import InfoPage from './pages/InfoPage';
+
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -64,6 +67,14 @@ function AppRoutes() {
     <Routes>
       {/* Landing */}
       <Route path="/" element={user ? <Navigate to={`/${user.role}`} replace /> : <LandingPage />} />
+      <Route path="/about" element={<InfoPage type="about" />} />
+      <Route path="/policies" element={<InfoPage type="policies" />} />
+      <Route path="/feedback" element={<InfoPage type="feedback" />} />
+      <Route path="/contact" element={<InfoPage type="contact" />} />
+      <Route path="/privacy" element={<InfoPage type="privacy" />} />
+      <Route path="/terms" element={<InfoPage type="terms" />} />
+      <Route path="/cookies" element={<InfoPage type="cookies" />} />
+
 
       {/* Auth */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to={`/${user.role}`} replace />} />
@@ -112,6 +123,7 @@ export default function App() {
       <AuthProvider>
         {!loadingDone && <LoadingScreen onDone={() => setLoadingDone(true)} />}
         <BrowserRouter>
+          <ScrollToTop />
           <AppRoutes />
           <Toaster
             position="top-center"

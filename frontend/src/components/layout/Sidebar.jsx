@@ -44,6 +44,7 @@ const navItems = {
 export default function Sidebar({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileNextState, setMobileNextState] = useState('narrow'); // 'narrow' or 'wide'
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -55,6 +56,11 @@ export default function Sidebar({ children }) {
     logout();
     toast.success('Logged out successfully');
     navigate('/');
+  };
+
+  const handleMobileClose = () => {
+    setMobileOpen(false);
+    setMobileNextState(prev => prev === 'narrow' ? 'wide' : 'narrow');
   };
 
   const roleColors = {
@@ -72,39 +78,37 @@ export default function Sidebar({ children }) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className={`flex items-center gap-3 p-5 border-b border-gray-100 ${collapsed ? 'justify-center' : ''}`}>
+      <div className={`flex items-center gap-3 p-5 border-b border-gray-100`}>
         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 p-1">
           <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
-        {!collapsed && <span className="font-bold text-gray-800 text-sm leading-tight">Student Eval<br />System</span>}
+        <span className="font-bold text-gray-800 text-sm leading-tight">Student Eval<br />System</span>
       </div>
 
       {/* User info — clickable to open profile panel */}
-      {!collapsed && (
-        <button
-          onClick={() => { setMobileOpen(false); setProfileOpen(true); }}
-          className="p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left w-full"
-        >
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl ${roleColors[user?.role]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden shadow-sm`}>
-              {user?.profileImage ? (
-                <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                user?.name?.charAt(0).toUpperCase()
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-gray-800 truncate">{user?.name}</p>
-              <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${roleBadgeColors[user?.role]}`}>
-                {roleLabels[user?.role]}
-              </span>
-              {user?.role === 'student' && user?.rollNo && (
-                <p className="text-xs text-gray-400 font-mono mt-0.5">{user.rollNo}</p>
-              )}
-            </div>
+      <button
+        onClick={() => { setMobileOpen(false); setProfileOpen(true); }}
+        className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left w-full`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl ${roleColors[user?.role]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden shadow-sm`}>
+            {user?.profileImage ? (
+              <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              user?.name?.charAt(0).toUpperCase()
+            )}
           </div>
-        </button>
-      )}
+          <div className="min-w-0">
+            <p className="font-semibold text-sm text-gray-800 truncate">{user?.name}</p>
+            <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${roleBadgeColors[user?.role]}`}>
+              {roleLabels[user?.role]}
+            </span>
+            {user?.role === 'student' && user?.rollNo && (
+              <p className="text-xs text-gray-400 font-mono mt-0.5">{user.rollNo}</p>
+            )}
+          </div>
+        </div>
+      </button>
 
       {/* Nav items */}
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
@@ -154,8 +158,10 @@ export default function Sidebar({ children }) {
         {/* Mobile sidebar overlay */}
         {mobileOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
-            <div className="w-64 bg-white h-full shadow-xl"><SidebarContent /></div>
-            <div className="flex-1 bg-black/40" onClick={() => setMobileOpen(false)} />
+            <div className={`bg-white h-full shadow-xl transition-all duration-300 overflow-hidden w-64`}>
+              <SidebarContent />
+            </div>
+            <div className="flex-1 bg-black/40" onClick={handleMobileClose} />
           </div>
         )}
 
@@ -166,7 +172,12 @@ export default function Sidebar({ children }) {
             <div className="flex items-center gap-3">
               <button onClick={() => {
                 if (window.innerWidth < 768) {
-                  setMobileOpen(true);
+                  if (!mobileOpen) {
+                    setMobileOpen(true);
+                    setCollapsed(mobileNextState === 'narrow');
+                  } else {
+                    handleMobileClose();
+                  }
                 } else {
                   setCollapsed(!collapsed);
                 }

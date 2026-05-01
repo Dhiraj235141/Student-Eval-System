@@ -83,9 +83,67 @@ export default function AIChatbot() {
     }
   }, [isOpen, isMinimized]);
 
+  const [position, setPosition] = useState({ x: null, y: null });
+  const [isDragging, setIsDragging] = useState(false);
+  const [rel, setRel] = useState(null);
+  const chatbotRef = useRef(null);
+
+  const handleStart = (e) => {
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    
+    // Only drag from the header area
+    const header = e.currentTarget;
+    const rect = chatbotRef.current.getBoundingClientRect();
+    
+    setRel({
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    });
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!isDragging) return;
+      
+      const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+      let newX = clientX - rel.x;
+      let newY = clientY - rel.y;
+
+      // Keep within bounds
+      const padding = 10;
+      newX = Math.max(padding, Math.min(window.innerWidth - (chatbotRef.current?.offsetWidth || 370) - padding, newX));
+      newY = Math.max(padding, Math.min(window.innerHeight - (chatbotRef.current?.offsetHeight || 580) - padding, newY));
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleEnd = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [isDragging, rel]);
+
   const openChat = () => {
     setIsOpen(true);
     setIsMinimized(false);
+    // Reset position on mobile to default bottom-right if it's the first time
+    if (window.innerWidth < 768) {
+        setPosition({ x: null, y: null });
+    }
     // Set welcome message if first time
     if (messages.length === 0) {
       setMessages([{
@@ -179,10 +237,27 @@ export default function AIChatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 z-50 w-[370px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 ${isMinimized ? 'h-14' : 'h-[580px]'}`}>
+        <div 
+            ref={chatbotRef}
+            className={`fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden ${isDragging ? 'transition-none shadow-blue-500/20' : 'transition-all duration-300 shadow-2xl'} 
+                ${isMinimized ? 'h-14' : 'h-[500px] md:h-[580px]'} 
+                w-[calc(100%-2rem)] md:w-[370px]
+                ${position.x === null ? 'bottom-4 right-4 md:bottom-6 md:right-6' : ''}`}
+            style={{
+                left: position.x !== null ? `${position.x}px` : undefined,
+                top: position.y !== null ? `${position.y}px` : undefined,
+                bottom: position.x === null ? undefined : 'auto',
+                right: position.x === null ? undefined : 'auto',
+                cursor: isDragging ? 'grabbing' : 'default'
+            }}
+        >
 
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <div 
+            onMouseDown={handleStart}
+            onTouchStart={handleStart}
+            className={`bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 flex items-center justify-between flex-shrink-0 cursor-grab active:cursor-grabbing select-none`}
+          >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
                 <Sparkles size={18} className="text-white" />
@@ -195,7 +270,7 @@ export default function AIChatbot() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
               <button
                 onClick={clearChat}
                 className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"

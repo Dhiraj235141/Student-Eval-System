@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Brain, FileText, Send, Loader, X, BookOpen, ExternalLink, Edit2, Check, Clock, RefreshCw, Trash2 } from 'lucide-react';
+import { BACKEND_URL } from '../../context/AuthContext';
 
 export default function FacultyCreateTest() {
   const [allSubjects, setAllSubjects] = useState([]);
@@ -29,7 +30,9 @@ export default function FacultyCreateTest() {
         const subs = res.data.subjects || [];
         setAllSubjects(subs);
         const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
-        setAvailableYears(years);
+        const yearOrder = { 'FY': 1, 'First Year': 1, 'SY': 2, 'Second Year': 2, 'TY': 3, 'Third Year': 3, 'Fourth Year': 4 };
+        const sortedYears = years.sort((a, b) => (yearOrder[a] || 99) - (yearOrder[b] || 99));
+        setAvailableYears(sortedYears);
         if (years.length > 0) setFilterYear(years[0]);
       })
       .catch(() => toast.error('Failed to load subjects'));
@@ -206,7 +209,7 @@ export default function FacultyCreateTest() {
               <span className="text-sm font-medium text-indigo-700 flex-1">Syllabus</span>
               {selectedSubjData.syllabusFile && (
                 <a
-                  href={`http://localhost:5000/uploads/syllabi/${selectedSubjData.syllabusFile}`}
+                  href={`${BACKEND_URL}/uploads/syllabi/${selectedSubjData.syllabusFile}`}
                   target="_blank" rel="noreferrer"
                   className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
                 >
@@ -295,71 +298,89 @@ export default function FacultyCreateTest() {
               <p className="text-sm">No tests created yet.</p>
             </div>
           ) : tests.map(t => (
-            <div key={t._id} className="card">
+            <div key={t._id} className="card overflow-hidden">
               {editingTest?._id === t._id ? (
                 /* EDIT FORM */
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-gray-700">Edit Test</p>
-                    <button onClick={() => { setEditingTest(null); setEditDuration(''); }} className="text-gray-400 hover:text-red-400"><X size={16} /></button>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <p className="text-sm font-bold text-gray-800">Editing: {t.topic}</p>
+                    <button onClick={() => { setEditingTest(null); setEditDuration(''); }} className="text-gray-400 hover:text-red-400 p-1"><X size={18} /></button>
                   </div>
-                  <input className="input text-sm" value={editingTest.topic} onChange={e => setEditingTest(t => ({ ...t, topic: e.target.value }))} placeholder="Topic" />
+                  
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Test Topic</label>
+                    <input className="input text-sm" value={editingTest.topic} onChange={e => setEditingTest(t => ({ ...t, topic: e.target.value }))} placeholder="Topic" />
+                  </div>
+
                   {/* Duration to restart timer */}
-                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                    <Clock size={14} className="text-amber-500 flex-shrink-0" />
-                    <span className="text-xs font-medium text-amber-700 flex-1">Restart timer (optional)</span>
-                    <input
-                      type="number" min="1" max="180"
-                      className="w-16 px-2 py-1 text-center border border-amber-300 rounded-lg text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
-                      placeholder="min"
-                      value={editDuration}
-                      onChange={e => setEditDuration(e.target.value)}
-                    />
-                    <span className="text-xs text-amber-600">min</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2 flex-1">
+                      <Clock size={16} className="text-amber-500" />
+                      <span className="text-xs font-semibold text-amber-800">Extend / Restart Timer</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number" min="1" max="180"
+                        className="w-20 px-3 py-1.5 text-center border border-amber-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                        placeholder="min"
+                        value={editDuration}
+                        onChange={e => setEditDuration(e.target.value)}
+                      />
+                      <span className="text-xs font-bold text-amber-600">minutes</span>
+                    </div>
                   </div>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Questions</p>
                     {editingTest.questions.map((q, qi) => (
-                      <div key={qi} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                        <textarea className="input text-xs resize-none w-full mb-2" rows={2} value={q.question} onChange={e => updateEditQ(qi, 'question', e.target.value)} />
-                        <div className="grid grid-cols-2 gap-1.5">
+                      <div key={qi} className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                        <textarea className="input text-xs resize-none w-full mb-3 bg-white" rows={2} value={q.question} onChange={e => updateEditQ(qi, 'question', e.target.value)} />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {q.options.map((op, oi) => (
-                            <div key={oi} className={`flex items-center gap-1.5 p-1.5 rounded-lg border ${q.correctAnswer === oi ? 'border-indigo-300 bg-indigo-50' : 'border-gray-100'}`}>
-                              <input type="radio" name={`eq${qi}`} checked={q.correctAnswer === oi} onChange={() => updateEditQ(qi, 'correctAnswer', oi)} className="w-3 h-3 text-indigo-600" />
-                              <input className="bg-transparent text-xs w-full outline-none" value={op} onChange={e => setEditingTest(t => ({ ...t, questions: t.questions.map((qq, i) => i === qi ? { ...qq, options: qq.options.map((o, j) => j === oi ? e.target.value : o) } : qq) }))} />
+                            <div key={oi} className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${q.correctAnswer === oi ? 'border-indigo-400 bg-indigo-50/50 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
+                              <input type="radio" name={`eq${qi}`} checked={q.correctAnswer === oi} onChange={() => updateEditQ(qi, 'correctAnswer', oi)} className="w-4 h-4 text-indigo-600" />
+                              <input className="bg-transparent text-xs w-full outline-none font-medium text-gray-700" value={op} onChange={e => setEditingTest(t => ({ ...t, questions: t.questions.map((qq, i) => i === qi ? { ...qq, options: qq.options.map((o, j) => j === oi ? e.target.value : o) } : qq) }))} />
                             </div>
                           ))}
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-2 justify-end pt-1">
-                    <button onClick={() => { setEditingTest(null); setEditDuration(''); }} className="btn-secondary text-xs px-3 py-1.5">Cancel</button>
-                    <button onClick={saveEditedTest} disabled={saving} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
-                      {saving ? <Loader size={12} className="animate-spin" /> : <Check size={12} />} Save
+
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={() => { setEditingTest(null); setEditDuration(''); }} className="btn-secondary text-sm flex-1">Cancel</button>
+                    <button onClick={saveEditedTest} disabled={saving} className="btn-primary text-sm flex-1 flex items-center justify-center gap-2">
+                      {saving ? <Loader size={14} className="animate-spin" /> : <Check size={14} />} 
+                      {saving ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </div>
               ) : (
                 /* VIEW ROW */
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800 truncate">{t.topic}</p>
-                    <p className="text-xs text-indigo-600 font-medium">{t.subject?.name}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><FileText size={10} />{t.questions?.length || 0} questions</span>
-                      <span className="flex items-center gap-1"><Clock size={10} />{new Date(t.createdAt).toLocaleDateString()}</span>
-                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${new Date(t.codeExpiresAt) > new Date() ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-gray-800 truncate text-base">{t.topic}</p>
+                      <span className={`px-2 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider ${new Date(t.codeExpiresAt) > new Date() ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
                         {new Date(t.codeExpiresAt) > new Date() ? 'Live' : 'Expired'}
                       </span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="text-center bg-indigo-50 rounded-xl px-3 py-1.5">
-                      <p className="text-[10px] text-indigo-500 font-medium uppercase">Code</p>
-                      <p className="font-black text-indigo-700 tracking-widest font-mono text-sm">{t.secretCode}</p>
+                    <p className="text-xs text-indigo-600 font-bold mb-2">{t.subject?.name}</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-medium text-gray-400">
+                      <span className="flex items-center gap-1"><FileText size={12} className="text-gray-300" />{t.questions?.length || 0} questions</span>
+                      <span className="flex items-center gap-1"><Clock size={12} className="text-gray-300" />{new Date(t.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <button onClick={() => setEditingTest({ ...t })} className="p-2 rounded-xl hover:bg-indigo-50 text-indigo-600 border border-indigo-100 transition-colors" title="Edit Test"><Edit2 size={14} /></button>
-                    <button onClick={() => deleteTest(t._id, t.topic)} className="p-2 rounded-xl hover:bg-red-50 text-red-400 border border-red-100 transition-colors" title="Delete Test"><Trash2 size={14} /></button>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-0 border-gray-50">
+                    <div className="flex flex-col items-center justify-center bg-indigo-50 rounded-xl px-4 py-1.5 min-w-[80px] border border-indigo-100">
+                      <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-tighter">Secret Code</p>
+                      <p className="font-black text-indigo-700 tracking-widest font-mono text-sm leading-none mt-1">{t.secretCode}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setEditingTest({ ...t })} className="p-2.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-600 border border-gray-200 hover:border-indigo-200 transition-all shadow-sm" title="Edit Test"><Edit2 size={16} /></button>
+                      <button onClick={() => deleteTest(t._id, t.topic)} className="p-2.5 rounded-xl bg-white hover:bg-red-50 text-red-400 border border-gray-200 hover:border-red-200 transition-all shadow-sm" title="Delete Test"><Trash2 size={16} /></button>
+                    </div>
                   </div>
                 </div>
               )}

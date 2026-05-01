@@ -18,21 +18,24 @@ export default function FacultyResults() {
       const subs = r.data.subjects || [];
       setAllSubjects(subs);
       const years = [...new Set(subs.map(s => s.class))].filter(Boolean);
-      setAvailableYears(years);
+      const yearOrder = { 'FY': 1, 'First Year': 1, 'SY': 2, 'Second Year': 2, 'TY': 3, 'Third Year': 3, 'Fourth Year': 4 };
+      const sortedYears = years.sort((a, b) => (yearOrder[a] || 99) - (yearOrder[b] || 99));
+      setAvailableYears(sortedYears);
       if (years.length > 0) setFilterYear(years[0]);
     });
-    fetchResults('');
   }, []);
 
   useEffect(() => {
-    // When year changes, reset subject to "All" (empty string) and refresh results
-    // Or we could force select first subject. Let's reset to all subjects of that year.
-    // Actually the current backend fetchResults('') gets results for ALL subjects.
-    // Maybe we should filter the results locally based on subjects?
-    // Let's just reset subject to empty and fetch all.
-    setSelectedSubject('');
-    fetchResults('');
-  }, [filterYear]);
+    // When year changes, force select first subject of that year
+    if (subjects.length > 0) {
+      const firstSub = subjects[0]._id;
+      setSelectedSubject(firstSub);
+      fetchResults(firstSub);
+    } else {
+      setSelectedSubject('');
+      setResults([]);
+    }
+  }, [filterYear, allSubjects]);
 
   const fetchResults = async (subId) => {
     setLoading(true);
@@ -57,8 +60,14 @@ export default function FacultyResults() {
     return 'bg-red-100 text-red-700';
   };
 
+  // Local filter based on current selected year's subjects
+  const filteredResults = results.filter(r => {
+    if (selectedSubject) return true; // Already handled by API if specific subject selected
+    return subjects.some(s => s._id === r.subject?._id);
+  });
+
   // Group results by test (topic + date)
-  const grouped = results.reduce((acc, r) => {
+  const grouped = filteredResults.reduce((acc, r) => {
     const key = r.test?._id || r._id;
     if (!acc[key]) {
       acc[key] = {
@@ -88,20 +97,19 @@ export default function FacultyResults() {
             <p className="text-xs text-gray-400">View each test's performance — click to expand student list</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <select 
-            className="input w-24 bg-white shadow-sm font-bold text-xs border-gray-200"
+            className="input w-1/3 sm:w-32 bg-white shadow-sm font-bold text-sm border-gray-200 hover:border-gray-300 transition-colors"
             value={filterYear}
             onChange={e => setFilterYear(e.target.value)}
           >
             {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <select
-            className="input w-full sm:w-64 bg-white shadow-sm font-medium text-sm border-gray-200"
+            className="input flex-1 sm:w-72 bg-white shadow-sm font-bold text-sm border-indigo-200 text-indigo-700 hover:shadow-md transition-all"
             value={selectedSubject}
             onChange={handleSubjectChange}
           >
-            <option value="">All {filterYear} Subjects</option>
             {subjects.map(s => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
           </select>
         </div>
@@ -145,50 +153,79 @@ export default function FacultyResults() {
                 {/* Expanded student results */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-gray-100 overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                      <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                        <tr>
-                          <th className="px-4 py-3 font-semibold">Student</th>
-                          <th className="px-4 py-3 font-semibold text-center">Score</th>
-                          <th className="px-4 py-3 font-semibold text-center">Grade</th>
-                          <th className="px-4 py-3 font-semibold text-center">Anti-Cheat</th>
-                          <th className="px-4 py-3 font-semibold text-right">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50 bg-white">
-                        {group.results.map((r) => (
-                          <tr key={r._id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-4 py-3">
-                              <p className="font-medium text-gray-800">{r.student?.name}</p>
-                              <p className="text-[10px] text-gray-400 font-mono mt-0.5 tracking-wider">{r.student?.rollNo || 'N/A'}</p>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <div className="inline-flex items-baseline gap-1">
-                                <span className="text-lg font-bold text-gray-800">{r.score}</span>
-                                <span className="text-xs text-gray-400 font-medium">/ 10</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full tracking-wide ${getGradeColor(r.grade)}`}>
-                                {r.grade}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {r.tabSwitchCount > 0 ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md" title="Switched tabs during test">
-                                  <AlertTriangle size={12} /> {r.tabSwitchCount} times
-                                </span>
-                              ) : (
-                                <span className="text-xs text-gray-400">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-right text-xs text-gray-500 font-medium">
-                              {new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </td>
+                    {/* Results Table (Desktop) / Cards (Mobile) */}
+                    <div className="hidden sm:block overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">Student</th>
+                            <th className="px-4 py-3 font-semibold text-center">Score</th>
+                            <th className="px-4 py-3 font-semibold text-center">Grade</th>
+                            <th className="px-4 py-3 font-semibold text-center">Anti-Cheat</th>
+                            <th className="px-4 py-3 font-semibold text-right">Date</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 bg-white">
+                          {group.results.map((r) => (
+                            <tr key={r._id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-800">{r.student?.name}</p>
+                                <p className="text-[10px] text-gray-400 font-mono mt-0.5 tracking-wider">{r.student?.rollNo || 'N/A'}</p>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="inline-flex items-baseline gap-1">
+                                  <span className="text-lg font-bold text-gray-800">{r.score}</span>
+                                  <span className="text-xs text-gray-400 font-medium">/ 10</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full tracking-wide ${getGradeColor(r.grade)}`}>
+                                  {r.grade}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {r.tabSwitchCount > 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md" title="Switched tabs during test">
+                                    <AlertTriangle size={12} /> {r.tabSwitchCount} times
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs text-gray-500 font-medium">
+                                {new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card List */}
+                    <div className="sm:hidden space-y-3">
+                      {group.results.map((r) => (
+                        <div key={r._id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <p className="font-bold text-gray-800">{r.student?.name}</p>
+                              <p className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">{r.student?.rollNo || 'N/A'}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-xl font-black text-gray-800">{r.score}<span className="text-[10px] text-gray-400 font-normal ml-0.5">/10</span></p>
+                               <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${getGradeColor(r.grade)}`}>{r.grade}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</span>
+                            {r.tabSwitchCount > 0 && (
+                              <span className="flex items-center gap-1 font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">
+                                <AlertTriangle size={10} /> {r.tabSwitchCount} tab switches
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

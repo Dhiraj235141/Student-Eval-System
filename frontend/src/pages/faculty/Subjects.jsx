@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { BookOpen, FileText, Upload, ExternalLink } from 'lucide-react';
+import { BACKEND_URL } from '../../context/AuthContext';
 
 export default function FacultySubjects() {
   const [subjects, setSubjects] = useState([]);
@@ -86,7 +87,7 @@ export default function FacultySubjects() {
               {/* View PDF */}
               {s.syllabusFile && (
                 <a
-                  href={`http://localhost:5000/uploads/syllabi/${s.syllabusFile}`}
+                  href={`${BACKEND_URL}/uploads/syllabi/${s.syllabusFile}`}
                   target="_blank" rel="noreferrer"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
                 >

@@ -64,9 +64,9 @@ export default function WeakTopics() {
           </div>
         </div>
 
-        {/* Filter Dropdown */}
+        {/* Filter Section */}
         {!loading && weakTopics.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
+          <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <BookOpen size={16} className="text-orange-500" />
               Filter by Subject:
@@ -74,10 +74,9 @@ export default function WeakTopics() {
             <select 
               value={selectedSubject} 
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all min-w-[200px]"
+              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all w-full sm:min-w-[200px]"
             >
               {[...new Set(weakTopics.map(t => t.subjectName))].map((s, i) => {
-                // Auto-select first subject if currently 'all'
                 if (selectedSubject === 'all' && i === 0) setSelectedSubject(s);
                 return <option key={s} value={s}>{s}</option>;
               })}
@@ -96,18 +95,20 @@ export default function WeakTopics() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { label: 'Total Weak Areas', value: weakTopics.length, color: 'text-orange-500', bg: 'bg-orange-50' },
               { label: 'Urgent (3+ fails)', value: weakTopics.filter(t => t.failCount >= 3).length, color: 'text-red-500', bg: 'bg-red-50' },
               { label: 'Review Needed', value: weakTopics.filter(t => t.failCount === 2).length, color: 'text-yellow-600', bg: 'bg-yellow-50' },
             ].map((s, i) => (
-              <div key={i} className="card flex flex-col items-center py-4 gap-2">
-                <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center`}>
+              <div key={i} className="card flex flex-row sm:flex-col items-center py-3 sm:py-4 px-4 gap-3 sm:gap-2">
+                <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
                   <TrendingDown size={20} className={s.color} />
                 </div>
-                <p className="text-2xl font-bold text-gray-800">{s.value}</p>
-                <p className="text-xs text-gray-400 text-center">{s.label}</p>
+                <div className="sm:text-center">
+                  <p className="text-xl sm:text-2xl font-bold text-gray-800 leading-none">{s.value}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">{s.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -122,25 +123,29 @@ export default function WeakTopics() {
                 const note = notes[topicKey];
 
               return (
-                <div key={i} className={`rounded-2xl border-2 ${colors.border} ${colors.bg} overflow-hidden transition-all`}>
-                  <div className="flex items-center justify-between p-4 cursor-pointer"
-                    onClick={() => toggleNotes(topicKey, item.topic)}>
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <BookOpen size={16} className="text-orange-500" />
+                <div key={i} className={`rounded-2xl border-2 ${colors.border} ${colors.bg} overflow-hidden transition-all hover:shadow-md`}>
+                  <div className="p-4 cursor-pointer" onClick={() => toggleNotes(topicKey, item.topic)}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100">
+                          <BookOpen size={18} className="text-orange-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-gray-800 truncate text-sm sm:text-base">{item.topic}</p>
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                            <span className="text-[10px] bg-white/60 text-orange-700 px-2 py-0.5 rounded font-bold uppercase">{item.subjectName}</span>
+                            <span className="text-[10px] text-gray-500">Failed {item.failCount}x</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-800 truncate">{item.topic}</p>
-                        <p className="text-xs text-gray-400 font-medium">Subject: <span className="text-orange-600">{item.subjectName}</span></p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">Failed {item.failCount} time{item.failCount > 1 ? 's' : ''} in tests</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${colors.badge}`}>{colors.label}</span>
-                      <div className="flex items-center gap-1 text-xs text-orange-600 font-medium bg-white px-3 py-1.5 rounded-lg shadow-sm">
-                        <Lightbulb size={13} />
-                        AI Notes
-                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-0 border-orange-100/50">
+                        <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-lg ${colors.badge}`}>{colors.label}</span>
+                        <div className="flex items-center gap-1.5 text-xs text-orange-600 font-bold bg-white px-3 py-1.5 rounded-xl shadow-sm border border-orange-100">
+                          <Lightbulb size={14} className="text-yellow-500" />
+                          <span className="hidden sm:inline">AI Study Notes</span>
+                          <span className="sm:hidden">Notes</span>
+                          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </div>
                       </div>
                     </div>
                   </div>

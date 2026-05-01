@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, ArrowRight, Brain, BarChart2, Users, Shield, ChevronDown } from 'lucide-react';
+import { GraduationCap, ArrowRight, Brain, BarChart2, Users, Shield, ChevronDown, Menu } from 'lucide-react';
+import BlobSidebar from '../components/layout/BlobSidebar';
+import Footer from '../components/layout/Footer';
+
+
+
 
 export default function LandingPage() {
   const canvasRef = useRef(null);
@@ -140,7 +145,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className={`relative min-h-screen bg-white overflow-hidden font-inter transition-opacity duration-700 ease-in-out ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`relative min-h-screen bg-white overflow-hidden font-inter transition-all duration-700 ease-in-out ${isExiting ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'}`}>
       {/* Gradient overlays (Placed under canvas) */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-white via-slate-50 to-white pointer-events-none" />
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-blue-100/50 rounded-full blur-3xl pointer-events-none z-0" />
@@ -149,20 +154,19 @@ export default function LandingPage() {
       {/* Canvas background */}
       <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />
 
+      {/* Morphing Sidebar */}
+      <BlobSidebar />
+
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
+      <nav className="relative z-10 flex items-center justify-between px-6 py-4">
+
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 p-1">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <span className="font-bold text-gray-900 text-base tracking-tight">Student Eval System</span>
         </div>
-        <button
-          onClick={() => handleNavigation('/login')}
-          className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-semibold"
-        >
-          Sign In
-        </button>
+        {/* Sign In button removed as requested, now part of sidebar */}
       </nav>
 
       {/* Hero Section */}
@@ -248,9 +252,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 text-center pb-8 text-gray-400 font-medium text-xs">
-        © 2026 Student Evaluation System. All rights reserved.
-      </footer>
+      <Footer />
+
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');

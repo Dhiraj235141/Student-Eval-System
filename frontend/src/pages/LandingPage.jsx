@@ -5,8 +5,6 @@ import BlobSidebar from '../components/layout/BlobSidebar';
 import Footer from '../components/layout/Footer';
 
 
-
-
 export default function LandingPage() {
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -192,7 +190,7 @@ export default function LandingPage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-center w-full max-w-xs sm:max-w-none mx-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-center w-full max-w-xs sm:max-w-none mx-auto mb-6 sm:mb-24">
             <button
               onClick={() => handleNavigation('/login')}
               className="group flex items-center justify-center gap-3 w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 transition-all duration-300 text-base hover:-translate-y-0.5 active:translate-y-0"
@@ -212,7 +210,7 @@ export default function LandingPage() {
         </div>
 
         {/* Floating stats */}
-        <div className={`relative mt-12 md:absolute md:mt-0 md:bottom-12 flex flex-wrap justify-center gap-6 sm:gap-8 w-full transition-all duration-1000 delay-500 ${visible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`relative mt-6 md:absolute md:mt-0 md:bottom-12 flex flex-wrap justify-center gap-6 sm:gap-8 w-full transition-all duration-1000 delay-500 ${visible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           {[
             { value: 'AI', label: 'Generated Tests' },
             { value: '3', label: 'User Roles' },

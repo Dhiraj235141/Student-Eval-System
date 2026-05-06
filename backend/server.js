@@ -29,14 +29,9 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 app.get('/', (req, res) => res.json({ message: 'Student Evaluation System API Running! 🎓' }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB Connected');
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server running on port ${process.env.PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
+const connectDB = require('./utils/db');
+connectDB();
+
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+});

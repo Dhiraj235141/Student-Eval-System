@@ -81,7 +81,7 @@ use student_eval_system
 
 db.users.insertOne({
   name: "Admin User",
-  email: "admin@school.com",
+  email: "studentevalsystem@gmail.com",
   password: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/VK.YXKGne", // "password123"
   role: "admin",
   isActive: true,
@@ -91,7 +91,7 @@ db.users.insertOne({
 ```
 
 Then login at **http://localhost:3000/login** with:
-- Email: admin@school.com
+- Email: studentevalsystem@gmail.com
 - Password: password123
 
 ---

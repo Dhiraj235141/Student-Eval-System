@@ -105,7 +105,7 @@ exports.generateTestQuestions = async (req, res) => {
       : '';
 
     const prompt = `You are an expert exam paper setter for the subject "${subjectName}".
-Generate EXACTLY ${TOTAL} MCQ questions on the topic(s): "${topics}".${syllabusContext}
+Generate EXACTLY ${TOTAL} MCQ questions based on the content related to: "${topics}".${syllabusContext}
 
 CRITICAL: Questions MUST be based only on the given topic and subject. Do NOT include questions from outside this scope.
 
@@ -116,26 +116,20 @@ Return ONLY a valid JSON array of exactly ${TOTAL} objects:
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "correctAnswer": 0,
     "difficulty": "easy",
-    "topic": "${topics}"
+    "topic": "Specific sub-topic name here (e.g. 'Memory Allocation' instead of just 'OS')"
   }
 ]
 
 Difficulty split — STRICTLY follow this order:
 - Questions 1 to ${easyCount} (difficulty "easy"):
   Basic knowledge and recall. Direct factual questions only.
-  Examples: "What is X?" / "Which of the following defines Y?" / "What does Z stand for?"
-
 - Questions ${easyCount + 1} to ${easyCount + mediumCount} (difficulty "medium"):
   Conceptual understanding. Explain, compare or identify relationships.
-  Examples: "Why does X happen?" / "Which statement about Y is correct?" / "What is the difference between A and B?"
-
 - Questions ${easyCount + mediumCount + 1} to ${TOTAL} (difficulty "hard"):
   Application-level ONLY. Present a real-world scenario; student must apply knowledge to solve it.
-  Examples: "In a system where X and Y occur, what is the correct approach?" / "A developer does A — what will be the output?"
-  Hard questions MUST describe a scenario — NOT a plain factual question.
-  All 4 options must be plausible (no obviously wrong answers).
 
 MANDATORY:
+- Identify the SPECIFIC SUB-TOPIC for each question and put it in the "topic" field.
 - Exactly ${TOTAL} questions total — no more, no less
 - Each question has exactly 4 answer options
 - correctAnswer is the 0-based index (0, 1, 2, or 3) of the correct option
@@ -209,13 +203,18 @@ exports.getStudyNotes = async (req, res) => {
     // Strip syllabus codes (e.g. "3.4 ", "Unit 1 - ") for better AI matching
     const cleanTopic = topic.replace(/^([0-9\.]+|Unit\s*[0-9]+|Chapter\s*[0-9]+)[:\s\-]*/i, '').trim();
 
-    const prompt = `You are a helpful tutor. A student is struggling with: "${cleanTopic}".
-Generate exactly 8 clear, concise, and actionable study points to help them understand this topic better.
-Return ONLY a valid JSON array of 8 strings (each string = one study point, 1-2 sentences max):
+    const prompt = `You are a high-level academic tutor. A student needs clear, expert-level study notes for the topic: "${cleanTopic}".
 
-["Point 1 here.", "Point 2 here.", "Point 3 here.", "Point 4 here.", "Point 5 here.", "Point 6 here.", "Point 7 here.", "Point 8 here."]
+Generate exactly 8 high-quality study points. Each point should be 1-2 insightful sentences that explain key concepts, definitions, or mechanisms.
 
-No extra text, no markdown, just the JSON array.`;
+Rules:
+1. CONTENT: Focus on "How", "Why", and core definitions.
+2. STRUCTURE: Return ONLY a valid JSON array of 8 strings.
+3. QUALITY: Ensure the language is professional, clear, and academically accurate.
+
+["1. Point here...", "2. Point here...", "3. Point here...", "4. Point here...", "5. Point here...", "6. Point here...", "7. Point here...", "8. Point here..."]
+
+Return ONLY the JSON array. No markdown, no extra text.`;
 
     const raw = await callAI(prompt, 500);
     const notes = parseJSON(raw);
@@ -227,51 +226,71 @@ No extra text, no markdown, just the JSON array.`;
 };
 
 // AI-grade a PDF assignment (reads file text content)
-exports.gradeAssignmentPDF = async (filePath, maxMarks = 10, questions = [], description = '') => {
+exports.gradeAssignmentPDF = async (filePath, maxMarks = 10, questions = [], description = '', title = '') => {
   try {
-    let content = '[PDF content could not be read]';
+    let content = '';
     try {
       const pdfParse = require('pdf-parse');
       const dataBuffer = fs.readFileSync(filePath);
       const pdfData = await pdfParse(dataBuffer);
-      content = pdfData.text.substring(0, 3000);
+      content = pdfData.text.trim();
+      console.log(`[AI Grader] Extracted ${content.length} characters from PDF.`);
+      
+      if (content.length < 10) {
+        console.warn('[AI Grader] PDF content is too short or empty.');
+        return 2; // Give 2 marks for a blank file attempt if topic is correct? No, let's keep it as is but log it.
+      }
     } catch (parseErr) {
-      console.log('pdf-parse not available, using file-based grading');
-      const stats = fs.statSync(filePath);
-      content = `File size: ${stats.size} bytes. Student submitted a PDF assignment.`;
+      console.error('[AI Grader] PDF Parse Error:', parseErr.message);
+      return 0;
     }
 
     // Build question checklist for grading if available
     let questionContext = '';
     if (questions && questions.length > 0) {
       const questionList = questions.map((q, i) => `Q${i + 1}. ${q.question}`).join('\n');
-      questionContext = `\n\nAssignment Questions (check if student answered these):\n${questionList}`;
+      questionContext = `\n\nREQUIRED QUESTIONS TO ANSWER:\n${questionList}`;
     }
-    const descContext = description ? `\n\nAssignment Topic/Description: ${description}` : '';
+    const topicContext = `ASSIGNMENT TITLE: ${title}\nASSIGNMENT DESCRIPTION/TOPIC: ${description}`;
 
-    const prompt = `You are a strict academic evaluator. Grade this student's assignment submission out of ${maxMarks} marks.
-${descContext}${questionContext}
+    const prompt = `You are a professional teacher grading a student's assignment out of ${maxMarks} marks.
 
-Student's submitted content:
+${topicContext}
+${questionContext}
+
+STUDENT'S SUBMITTED CONTENT (Text extracted from PDF):
 """
-${content}
+${content.substring(0, 6000)}
 """
 
-STRICT GRADING RULES:
-1. DATA MATCHING: The content MUST directly match the facts and technical details related to the topic/questions.
-2. ACCURACY: If the student provides generic information that doesn't match the specific requirements of the questions, deduct marks.
-3. DEPTH: High marks ONLY if the student explains "how" and "why", matching the expected academic data for this subject.
-4. If the submission is empty or completely irrelevant, give 0.
+GRADING GUIDELINES (BE HUMAN-LIKE):
+1. RELEVANCE CHECK: If the content is about "${title}", it is a VALID ATTEMPT.
+2. VARIATION BASED ON QUALITY:
+   - POOR/MESSY WORK: If the content is very short, poorly organized, or has many errors, give a score between 5 and 14.
+   - AVERAGE WORK: If they covered the basics but nothing special, give a score between 15 and 19.
+   - EXCELLENT WORK: Only give 20 to ${maxMarks} if the content is detailed, well-structured, and clearly answers the questions.
+3. NO ZERO POLICY: If the student submitted a file on the correct topic, DO NOT give 0. The absolute minimum for an on-topic attempt is 5.
 
-Return ONLY a single number (the score) between 0 and ${maxMarks}. No text, no explanation, just the number.`;
+Return ONLY the numerical score:`;
 
     const raw = await callAI(prompt, 100);
-    const score = parseFloat(raw.trim());
-    if (isNaN(score) || score < 0 || score > maxMarks) return Math.round(maxMarks * 0.6);
-    return Math.round(score);
+    console.log(`[AI Grader] AI Raw Response: "${raw.trim()}"`);
+    const score = parseFloat(raw.replace(/[^\d.]/g, '')); 
+    
+    if (isNaN(score) || score < 0) return 0;
+    
+    let finalScore = Math.min(Math.round(score), maxMarks);
+    
+    // Safety check: If it's on topic (content exists) but AI gave too low a score, boost to at least 5
+    if (content.length > 10 && finalScore < 5 && maxMarks >= 10) {
+      finalScore = Math.floor(Math.random() * (8 - 5 + 1) + 5); // Give random 5-8 marks for poor attempt
+    }
+
+    console.log(`[AI Grader] Final Calculated Score: ${finalScore}`);
+    return finalScore;
   } catch (err) {
     console.error('AI PDF Grading Error:', err.message);
-    return null;
+    return 0; // Return 0 on total failure to be safe
   }
 };
 
@@ -316,20 +335,21 @@ exports.refineWeakTopics = async (rawTopics) => {
   try {
     if (!rawTopics || rawTopics.length === 0) return [];
     
-    const prompt = `You are an academic analyst. I have a list of raw topic strings where a student failed questions in an exam.
-Raw topics: ${JSON.stringify(rawTopics.slice(0, 20))}
+    const prompt = `You are an academic curriculum expert. I have a list of raw, potentially messy topic strings where a student failed questions in an exam.
+Raw input data: ${JSON.stringify(rawTopics.slice(0, 30))}
 
 Your task:
-1. Group similar or related items.
-2. Convert them into professional, proper academic topic names (e.g., "Memory Management", "Leadership Styles").
-3. Return ONLY a valid JSON array of strings, max 5 topics.
+1. CLEANING: Remove any non-academic text, codes, or noise (e.g. "1.2 ", "Unit 3 - ", "failed", "Watch", "AI Notes").
+2. CATEGORIZATION: Group similar or overlapping sub-topics together.
+3. REWRITING: Convert the raw strings into clear, professional academic topic names (e.g. "Memory Management", "Microeconomic Theory", "Marketing Mix Strategies").
+4. FILTERING: Return ONLY the most significant topics (max 8).
 
-Example Input: ["1.2 memory", "RAM management", "paging system"]
+Example Input: ["1.2 memory", "RAM management", "paging system", "Watch notes on paging"]
 Example Output: ["Memory Management and Paging Systems"]
 
-Return ONLY the JSON array. No extra text.`;
+Return ONLY a valid JSON array of strings. No extra text, no markdown.`;
 
-    const raw = await callAI(prompt, 500);
+    const raw = await callAI(prompt, 800);
     return parseJSON(raw);
   } catch (err) {
     console.error('AI Refine Topics Error:', err.message);

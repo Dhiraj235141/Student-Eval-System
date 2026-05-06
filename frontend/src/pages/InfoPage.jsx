@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -13,6 +14,7 @@ import Footer from '../components/layout/Footer';
 
 const InfoPage = ({ type }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({ name: '', email: '', type: 'Suggestion', message: '' });
   const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '', company: '', subject: '', message: '' });
@@ -25,13 +27,21 @@ const InfoPage = ({ type }) => {
     { id: 'Compliment', label: 'Compliment', icon: Heart, color: 'emerald' },
   ];
 
+  useEffect(() => {
+    if (user) {
+      setFeedbackForm(prev => ({ ...prev, name: user.name || '', email: user.email || '' }));
+      setContactForm(prev => ({ ...prev, name: user.name || '', email: user.email || '' }));
+    }
+  }, [user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const isContact = type === 'contact';
     const currentForm = isContact ? contactForm : feedbackForm;
 
-    if (!currentForm.name || !currentForm.email || !currentForm.message) {
+    const isVisitor = !user;
+    if ((isVisitor && (!currentForm.name || !currentForm.email)) || !currentForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -367,39 +377,95 @@ const InfoPage = ({ type }) => {
             </div>
           </div>
 
-          {/* Mission & Team Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Mission Card */}
-            <div className="bg-white rounded-[32px] p-8 md:p-10 shadow-lg border border-gray-100 flex flex-col h-full">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                  <Info className="text-white" size={24} />
-                </div>
-                <h3 className="text-xl md:text-2xl font-black text-[#1E293B]"> Our Mission</h3>
-              </div>
-              <p className="text-gray-500 leading-relaxed text-sm md:text-base">
+          {/* Mission Section */}
+          <div className="bg-white rounded-[40px] p-8 md:p-12 shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-8 group">
+            <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-600/20 shrink-0 transform group-hover:rotate-6 transition-transform duration-500">
+              <Info className="text-white" size={32} />
+            </div>
+            <div className="space-y-4 text-center md:text-left">
+              <h3 className="text-2xl md:text-3xl font-black text-[#1E293B]">Our Mission</h3>
+              <p className="text-gray-500 leading-relaxed text-base md:text-lg">
                 We are committed to building a smart and efficient academic evaluation system that improves the overall learning experience. Our goal is to provide a platform that ensures accurate performance tracking and continuous improvement in education.
               </p>
             </div>
+          </div>
 
-            {/* Team Card */}
-            <div className="bg-white rounded-[32px] p-8 md:p-10 shadow-lg border border-gray-100 flex flex-col h-full">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-600/20">
-                  <Activity className="text-white" size={24} />
-                </div>
-                <h3 className="text-xl md:text-2xl font-black text-[#1E293B]">Our Team</h3>
-              </div>
-              <p className="text-gray-500 mb-8 text-xs md:text-sm">
-                Meet the dedicated professionals working tirelessly to provide the best user experience.
+          {/* Team Section - Now Full Width */}
+          <div className="space-y-12 pt-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-1 w-24 bg-purple-600 rounded-full" />
+              <h3 className="text-3xl md:text-5xl font-black text-[#1E293B] tracking-tight">Meet Our Team</h3>
+              <p className="text-gray-500 font-medium max-w-2xl text-lg">
+                The brilliant minds behind the Student Evaluation System, dedicated to educational excellence.
               </p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                {['👨‍💻', '👦', '👦', '👦', '👩'].map((emoji, index) => (
-                  <div key={index} className="w-14 h-14 md:w-16 md:h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-3xl md:text-4xl shadow-inner border border-gray-100 hover:-translate-y-1 transition-all cursor-default">
-                    {emoji}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8 md:gap-12 max-w-6xl mx-auto">
+              {[
+                { id: 1, name: 'Vishal Misal', role: 'Lead Developer', image: '/team/member1.png', theme: 'blue', linkedin: 'https://www.linkedin.com/in/vishal-misal-2285803a7?utm_source=share_via&utm_content=profile&utm_medium=member_android', instagram: 'https://www.instagram.com/misal_vishal7?igsh=MXZnMnlxMjU2NzlyMw==' },
+                { id: 2, name: 'Dhiraj Patil', role: 'Project Lead', image: '/team/member2.png', theme: 'purple', linkedin: 'https://www.linkedin.com/in/dhiraj-patil-a570a5329?utm_source=share_via&utm_content=profile&utm_medium=member_android', instagram: 'https://www.instagram.com/dhiraj_ptl__001?igsh=eHBhZXJmZGp1Z2p5' },
+                { id: 3, name: 'Kunal Patil', role: 'DataBase Administrator', image: '/team/member3.jpeg', theme: 'emerald', linkedin: 'https://www.linkedin.com/in/kunal-patil-8b3a443a6?utm_source=share_via&utm_content=profile&utm_medium=member_android', instagram: 'https://www.instagram.com/kunalptl_018?utm_source=qr&igsh=MjRxa2kwbHJncHkw' },
+                { id: 4, name: 'Mansi Patil', role: 'UI/UX Designer', image: '/team/member4.png', theme: 'amber', linkedin: 'https://www.linkedin.com/in/mansi-patil-187b17407/', instagram: 'https://www.instagram.com/mansipatil.24?igsh=MXRjNTU2N253MWltbw==' },
+                { id: 5, name: 'Janhavi Nandan', role: 'FrontEnd Developer', image: '/team/member6.png', theme: 'rose', linkedin: 'https://www.linkedin.com/in/janhavi-nandan-35b409350?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app', instagram: 'https://www.instagram.com/janvy_9923?utm_source=qr&igsh=MThzd2M2OHl1ZW5lOA==' },
+                { id: 6, name: 'Rakshanda Kakade', role: 'Quality Analyst', image: '/team/member7.png', theme: 'indigo', linkedin: 'https://in.linkedin.com/in/rakshanda-kakade-5b487b28a', instagram: '#' },
+              ].map((member, index) => {
+                const colorMap = {
+                  blue: 'bg-blue-500 text-blue-600 border-blue-100 shadow-blue-500/20',
+                  purple: 'bg-purple-500 text-purple-600 border-purple-100 shadow-purple-500/20',
+                  emerald: 'bg-emerald-500 text-emerald-600 border-emerald-100 shadow-emerald-500/20',
+                  amber: 'bg-amber-500 text-amber-600 border-amber-100 shadow-amber-500/20',
+                  rose: 'bg-rose-500 text-rose-600 border-rose-100 shadow-rose-500/20',
+                  indigo: 'bg-indigo-500 text-indigo-600 border-indigo-100 shadow-indigo-500/20',
+                };
+                const theme = colorMap[member.theme].split(' ');
+
+                return (
+                  <div
+                    key={member.id}
+                    className="group flex flex-col items-center text-center space-y-4"
+                  >
+                    {/* Compact Circular Image Container - Smaller Size */}
+                    <div className="relative w-24 h-24 md:w-40 md:h-40 lg:w-52 lg:h-52 transition-transform duration-500 group-hover:scale-105">
+                      <div className={`absolute inset-0 ${theme[0]} rounded-full scale-0 group-hover:scale-125 transition-transform duration-500 opacity-15 blur-lg`} />
+                      <div
+                        onClick={() => member.linkedin && member.linkedin !== '#' && window.open(member.linkedin, '_blank')}
+                        className={`w-full h-full rounded-full overflow-hidden border-4 border-white shadow-lg group-hover:shadow-2xl group-hover:${theme[2]} transition-all duration-500 relative z-10 ${member.linkedin && member.linkedin !== '#' ? 'cursor-pointer' : ''}`}
+                      >
+                        <img
+                          src={member.image}
+                          alt={member.name}
+                          className={`w-full h-full object-cover transition-all duration-700 ${member.id === 2 ? 'object-[center_20%]' : [1, 3].includes(member.id) ? 'object-[center_37%]' : 'object-center'}`}
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random&color=fff&size=512&bold=true`;
+                          }}
+                        />
+                      </div>
+                      {/* Floating Badge (Instagram Link) */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (member.instagram && member.instagram !== '#') {
+                            window.open(member.instagram, '_blank');
+                          }
+                        }}
+                        className={`absolute -bottom-1 -right-1 w-9 h-9 md:w-12 md:h-12 bg-white rounded-full shadow-md flex items-center justify-center z-20 scale-0 group-hover:scale-110 transition-all duration-500 delay-75 border border-gray-50 cursor-pointer hover:rotate-12`}
+                      >
+                        <Rocket className={`${theme[1]} w-4 h-4 md:w-5 md:h-5`} />
+                      </div>
+                    </div>
+
+                    {/* Minimalist Text Info */}
+                    <div className="space-y-1">
+                      <h4 className="text-base md:text-lg font-black text-[#1E293B] group-hover:text-blue-600 transition-colors duration-300">
+                        {member.name}
+                      </h4>
+                      <p className={`${theme[1]} text-[10px] md:text-xs font-black uppercase tracking-[0.2em] opacity-80`}>
+                        {member.role}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
 
@@ -412,40 +478,53 @@ const InfoPage = ({ type }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 {
-                  title: '📊 Performance Analytics',
+                  title: 'Performance Analytics',
                   desc: 'Track student progress with detailed dashboards showing marks, trends, strengths, and weak areas for better academic insights.',
                   icon: BarChart2,
                   bg: 'bg-blue-50',
-                  color: 'text-blue-600'
+                  color: 'text-blue-600',
+                  emoji: ''
                 },
                 {
-                  title: '📅 Smart Attendance System',
+                  title: 'Smart Attendance System',
                   desc: 'Secure code-based attendance marking with time validation to ensure only real-time classroom participation.',
                   icon: CalendarCheck,
                   bg: 'bg-emerald-50',
-                  color: 'text-emerald-600'
+                  color: 'text-emerald-600',
+                  emoji: ''
                 },
                 {
-                  title: '📝 Test & Assignment System',
+                  title: 'Test & Assignment System',
                   desc: 'Create, manage, and evaluate tests and assignments with instant results and feedback for students.',
                   icon: ClipboardCheck,
                   bg: 'bg-indigo-50',
-                  color: 'text-indigo-600'
+                  color: 'text-indigo-600',
+                  emoji: ''
                 },
                 {
-                  title: '📢 Real-time Notifications',
+                  title: 'Real-time Notifications',
                   desc: 'Get instant alerts for tests, submissions, results, and attendance warnings to stay updated at all times.',
                   icon: Bell,
                   bg: 'bg-rose-50',
-                  color: 'text-rose-600'
+                  color: 'text-rose-600',
+                  emoji: ''
                 }
               ].map((feature, i) => (
-                <div key={i} className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-md hover:shadow-xl transition-all group">
-                  <div className={`w-14 h-14 rounded-2xl ${feature.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                    <feature.icon className={feature.color} size={28} />
+                <div key={i} className="group bg-white p-8 rounded-[32px] shadow-lg border border-gray-100 flex flex-col gap-5 hover:scale-[1.03] active:scale-[0.98] hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 cursor-default relative overflow-hidden">
+                  {/* Background decoration */}
+                  <div className={`absolute top-0 right-0 w-32 h-32 ${feature.bg} opacity-0 group-hover:opacity-40 rounded-full -translate-y-16 translate-x-16 blur-2xl transition-opacity duration-500`} />
+
+                  <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 ${feature.bg} rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 shadow-inner`}>
+                      <feature.icon className={feature.color} size={28} />
+                    </div>
+                    <h4 className="text-lg md:text-xl font-black text-[#1E293B] group-hover:text-blue-600 transition-colors">
+                      {feature.emoji} {feature.title}
+                    </h4>
                   </div>
-                  <h4 className="text-xl font-black text-[#1E293B] mb-3">{feature.title}</h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">{feature.desc}</p>
+                  <p className="text-gray-500 leading-relaxed text-sm md:text-base">
+                    {feature.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -504,30 +583,32 @@ const InfoPage = ({ type }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-12">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <label className="text-sm font-black text-gray-900 uppercase tracking-widest">Your Name *</label>
-                      <input
-                        type="text"
-                        placeholder="Full Name"
-                        className="w-full px-8 py-5 bg-gray-50 border-gray-100 border-2 rounded-[28px] focus:bg-white focus:border-blue-600 transition-all outline-none font-bold"
-                        value={feedbackForm.name}
-                        onChange={e => setFeedbackForm({ ...feedbackForm, name: e.target.value })}
-                        required
-                      />
+                  {!user && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <label className="text-sm font-black text-gray-900 uppercase tracking-widest">Your Name *</label>
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          className="w-full px-8 py-5 bg-gray-50 border-gray-100 border-2 rounded-[28px] focus:bg-white focus:border-blue-600 transition-all outline-none font-bold"
+                          value={feedbackForm.name}
+                          onChange={e => setFeedbackForm({ ...feedbackForm, name: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-sm font-black text-gray-900 uppercase tracking-widest">Email Address *</label>
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          className="w-full px-8 py-5 bg-gray-50 border-gray-100 border-2 rounded-[28px] focus:bg-white focus:border-blue-600 transition-all outline-none font-bold"
+                          value={feedbackForm.email}
+                          onChange={e => setFeedbackForm({ ...feedbackForm, email: e.target.value })}
+                          required
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <label className="text-sm font-black text-gray-900 uppercase tracking-widest">Email Address *</label>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full px-8 py-5 bg-gray-50 border-gray-100 border-2 rounded-[28px] focus:bg-white focus:border-blue-600 transition-all outline-none font-bold"
-                        value={feedbackForm.email}
-                        onChange={e => setFeedbackForm({ ...feedbackForm, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
+                  )}
 
                   <div className="space-y-6">
                     <label className="text-sm font-black text-gray-900 uppercase tracking-widest">Feedback Type *</label>
@@ -589,17 +670,32 @@ const InfoPage = ({ type }) => {
 
                     <form onSubmit={handleSubmit} className="space-y-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Your Name</label>
-                          <input
-                            type="text"
-                            placeholder="Full Name"
-                            className="w-full border-b border-gray-200 py-2.5 focus:border-[#2563EB] outline-none transition-colors text-gray-800 font-bold bg-transparent text-base"
-                            value={contactForm.name}
-                            onChange={e => setContactForm({ ...contactForm, name: e.target.value })}
-                            required
-                          />
-                        </div>
+                        {!user && (
+                          <>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Your Name</label>
+                              <input
+                                type="text"
+                                placeholder="Full Name"
+                                className="w-full border-b border-gray-200 py-2.5 focus:border-[#2563EB] outline-none transition-colors text-gray-800 font-bold bg-transparent text-base"
+                                value={contactForm.name}
+                                onChange={e => setContactForm({ ...contactForm, name: e.target.value })}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
+                              <input
+                                type="email"
+                                placeholder="name@email.com"
+                                className="w-full border-b border-gray-200 py-2.5 focus:border-[#2563EB] outline-none transition-colors text-gray-800 font-bold bg-transparent text-base"
+                                value={contactForm.email}
+                                onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
+                                required
+                              />
+                            </div>
+                          </>
+                        )}
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Phone</label>
                           <input
@@ -608,17 +704,6 @@ const InfoPage = ({ type }) => {
                             className="w-full border-b border-gray-200 py-2.5 focus:border-[#2563EB] outline-none transition-colors text-gray-800 font-bold bg-transparent text-base"
                             value={contactForm.phone}
                             onChange={e => setContactForm({ ...contactForm, phone: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
-                          <input
-                            type="email"
-                            placeholder="name@email.com"
-                            className="w-full border-b border-gray-200 py-2.5 focus:border-[#2563EB] outline-none transition-colors text-gray-800 font-bold bg-transparent text-base"
-                            value={contactForm.email}
-                            onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
-                            required
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -689,7 +774,7 @@ const InfoPage = ({ type }) => {
                       <Phone size={22} fill="currentColor" fillOpacity={0.1} />
                     </div>
                     <div className="flex flex-col text-left">
-                      <a href="tel:+919021766366" className="text-[#1E293B] font-bold text-base hover:text-blue-600 transition-colors">+91 9021766366</a>
+                      <a href="tel:+919579970183" className="text-[#1E293B] font-bold text-base hover:text-blue-600 transition-colors">+91 9579970183</a>
                       <a href="tel:+917972815280" className="text-[#1E293B] font-bold text-base hover:text-blue-600 transition-colors">+91 7972815280</a>
                     </div>
                   </div>
@@ -778,7 +863,9 @@ const InfoPage = ({ type }) => {
         </div>
       </main>
 
-      <Footer />
+      <div className="mt-12">
+        <Footer />
+      </div>
     </div>
   );
 };

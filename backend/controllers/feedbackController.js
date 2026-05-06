@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 
 // Helper: Send email
 const sendFeedbackEmails = async (student, feedback) => {
-  const adminEmail = 'studentevalsystem@gmail.com';
+  const adminEmail = process.env.EMAIL_USER || 'studentevalsystem@gmail.com';
   const emailUser = (process.env.EMAIL_USER || '').trim();
   const emailPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
 

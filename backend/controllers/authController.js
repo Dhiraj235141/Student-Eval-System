@@ -531,8 +531,16 @@ exports.uploadProfileImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No image uploaded' });
 
-    // Construct the URL to the uploaded image. We use the /uploads/profiles route
-    const profileImage = `${req.protocol}://${req.get('host')}/uploads/profiles/${req.file.filename}`;
+    // Upload buffer from memoryStorage to GridFS
+    const { uploadToGridFS } = require('../utils/gridfsHelper');
+    const fileId = await uploadToGridFS(
+      req.file.buffer,
+      `profile-${Date.now()}-${req.file.originalname}`,
+      req.file.mimetype,
+      'profiles'
+    );
+
+    const profileImage = `/api/files/${fileId}`;
 
     const User = require('../models/User');
     const user = await User.findByIdAndUpdate(req.user.id, { profileImage }, { new: true })
@@ -545,3 +553,4 @@ exports.uploadProfileImage = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+

@@ -7,7 +7,7 @@ const subjectSchema = new mongoose.Schema({
   branch: { type: [String], default: ['All'] }, // Array for multi-branch subjects
   faculty: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   syllabus: { type: mongoose.Schema.Types.Mixed, default: '' },
-  syllabusFile: { type: String },
+  syllabusFileId: { type: mongoose.Schema.Types.ObjectId }, // GridFS file ID
   isActive: { type: Boolean, default: true },
   semesterType: { type: String, enum: ['ODD', 'EVEN'], default: 'ODD' }
 }, { timestamps: true });

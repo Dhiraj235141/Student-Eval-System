@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { User, Mail, Hash, BookOpen, Lock, Eye, EyeOff, Save, GraduationCap, Shield, Edit2, X, Briefcase } from 'lucide-react';
+import { User, Mail, Hash, BookOpen, Lock, Eye, EyeOff, Save, GraduationCap, Shield, Edit2, X, Briefcase, Camera } from 'lucide-react';
+import { BACKEND_URL } from '../context/AuthContext';
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -15,6 +16,8 @@ export default function Profile() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loadingPass, setLoadingPass] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Profile Edit state
   const [editingProfile, setEditingProfile] = useState(false);
@@ -64,21 +67,79 @@ export default function Profile() {
     }
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
+
+    const formData = new FormData();
+    formData.append('image', file);
+    setUploadingPhoto(true);
+    try {
+      const res = await axios.post('/auth/profile-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      updateUser(res.data.user);
+      toast.success('Profile photo updated!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  // Resolve the profile image URL
+  const profileImgSrc = user?.profileImage
+    ? (user.profileImage.startsWith('http') ? user.profileImage : `${BACKEND_URL}${user.profileImage}`)
+    : null;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Profile card */}
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-5">
-            <div className={`w-16 h-16 ${cfg.color} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
-              <span className="text-white text-2xl font-bold">{user?.name?.charAt(0).toUpperCase()}</span>
+            {/* Clickable Avatar with upload overlay */}
+            <div
+              className="relative w-16 h-16 flex-shrink-0 cursor-pointer group"
+              onClick={() => fileInputRef.current?.click()}
+              title="Click to change profile photo"
+            >
+              {profileImgSrc ? (
+                <img
+                  src={profileImgSrc}
+                  alt="Profile"
+                  className="w-16 h-16 rounded-2xl object-cover shadow-lg"
+                />
+              ) : (
+                <div className={`w-16 h-16 ${cfg.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                  <span className="text-white text-2xl font-bold">{user?.name?.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
+              {/* Hover overlay */}
+              <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploadingPhoto
+                  ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Camera size={18} className="text-white" />}
+              </div>
             </div>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
             <div>
               <h1 className="text-xl font-bold text-gray-800">{user?.name}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <RoleIcon size={14} className="text-gray-400" />
                 <span className="text-sm text-gray-400">{cfg.label}</span>
               </div>
+              <p className="text-xs text-gray-400 mt-0.5">Click photo to change</p>
             </div>
           </div>
           {user?.role === 'faculty' && !editingProfile && (

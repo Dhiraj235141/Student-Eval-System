@@ -17,7 +17,7 @@ const assignmentSchema = new mongoose.Schema({
   submissions: [{
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     answers: [{ type: String }],
-    pdfPath: { type: String }, // filename of uploaded PDF
+    pdfFileId: { type: mongoose.Schema.Types.ObjectId }, // GridFS file ID
     submittedAt: { type: Date },
     isLate: { type: Boolean, default: false },
     aiScore: { type: Number }, // AI-given score

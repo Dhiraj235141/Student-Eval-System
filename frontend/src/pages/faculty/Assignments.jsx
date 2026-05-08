@@ -817,7 +817,7 @@ export default function FacultyAssignments() {
                                    {s.status !== 'pending' && (
                                      <div className="flex items-center justify-end gap-2">
                                        <button onClick={() => saveManualScore(a._id, s)} className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-2 py-1.5 rounded transition-colors">Save</button>
-                                       {s.pdfPath && <a href={`${BACKEND_URL}/uploads/assignments/${s.pdfPath}`} target="_blank" rel="noreferrer" className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium px-2 py-1.5 rounded flex items-center gap-1 transition-colors border border-gray-200"><FileText size={12}/> View PDF</a>}
+                                       {s.pdfUrl && <a href={`${BACKEND_URL}${s.pdfUrl}`} target="_blank" rel="noreferrer" className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium px-2 py-1.5 rounded flex items-center gap-1 transition-colors border border-gray-200"><FileText size={12}/> View PDF</a>}
                                      </div>
                                    )}
                                 </td>

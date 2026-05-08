@@ -225,20 +225,19 @@ Return ONLY the JSON array. No markdown, no extra text.`;
   }
 };
 
-// AI-grade a PDF assignment (reads file text content)
-exports.gradeAssignmentPDF = async (filePath, maxMarks = 10, questions = [], description = '', title = '') => {
+// AI-grade a PDF assignment — accepts a Buffer (works with GridFS, no filesystem needed)
+exports.gradeAssignmentPDF = async (pdfBuffer, maxMarks = 10, questions = [], description = '', title = '') => {
   try {
     let content = '';
     try {
       const pdfParse = require('pdf-parse');
-      const dataBuffer = fs.readFileSync(filePath);
-      const pdfData = await pdfParse(dataBuffer);
+      const pdfData = await pdfParse(pdfBuffer);
       content = pdfData.text.trim();
       console.log(`[AI Grader] Extracted ${content.length} characters from PDF.`);
       
       if (content.length < 10) {
         console.warn('[AI Grader] PDF content is too short or empty.');
-        return 2; // Give 2 marks for a blank file attempt if topic is correct? No, let's keep it as is but log it.
+        return 2;
       }
     } catch (parseErr) {
       console.error('[AI Grader] PDF Parse Error:', parseErr.message);
@@ -283,14 +282,14 @@ Return ONLY the numerical score:`;
     
     // Safety check: If it's on topic (content exists) but AI gave too low a score, boost to at least 5
     if (content.length > 10 && finalScore < 5 && maxMarks >= 10) {
-      finalScore = Math.floor(Math.random() * (8 - 5 + 1) + 5); // Give random 5-8 marks for poor attempt
+      finalScore = Math.floor(Math.random() * (8 - 5 + 1) + 5);
     }
 
     console.log(`[AI Grader] Final Calculated Score: ${finalScore}`);
     return finalScore;
   } catch (err) {
     console.error('AI PDF Grading Error:', err.message);
-    return 0; // Return 0 on total failure to be safe
+    return 0;
   }
 };
 

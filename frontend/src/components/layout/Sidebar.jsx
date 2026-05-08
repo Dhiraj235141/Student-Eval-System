@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, BACKEND_URL } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard, BookOpen, ClipboardList, Users, BarChart2,
@@ -54,6 +54,13 @@ export default function Sidebar({ children }) {
 
   const items = navItems[user?.role] || [];
 
+  // Resolve GridFS relative URLs to full backend URLs for <img> src
+  const getFileUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/api/files/')) return `${BACKEND_URL}${url}`;
+    return url; // External URLs (Google OAuth pictures) pass through as-is
+  };
+
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
@@ -95,7 +102,7 @@ export default function Sidebar({ children }) {
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl ${roleColors[user?.role]} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden shadow-sm`}>
             {user?.profileImage ? (
-              <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+              <img src={getFileUrl(user.profileImage)} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               user?.name?.charAt(0).toUpperCase()
             )}
@@ -199,7 +206,7 @@ export default function Sidebar({ children }) {
                 className={`w-8 h-8 rounded-lg ${roleColors[user?.role]} flex items-center justify-center text-white font-bold text-xs hover:opacity-80 transition-opacity shadow-sm overflow-hidden`}
               >
                 {user?.profileImage
-                  ? <img src={user.profileImage} alt="P" className="w-full h-full object-cover" />
+                  ? <img src={getFileUrl(user.profileImage)} alt="P" className="w-full h-full object-cover" />
                   : user?.name?.charAt(0).toUpperCase()
                 }
               </button>

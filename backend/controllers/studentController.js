@@ -7,8 +7,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Subject = require('../models/Subject');
 const SystemConfig = require('../models/SystemConfig');
-const path = require('path');
-const fs = require('fs');
+const { uploadToGridFS } = require('../utils/gridfsHelper');
 
 // @desc    Get subjects for student (year-based, filtered by active semester)
 // @route   GET /api/student/subjects
@@ -315,13 +314,13 @@ exports.submitAssignmentPDF = async (req, res) => {
     const now = new Date();
     const isLate = now > assignment.deadline;
 
-    // Try AI grading — pass assignment questions & description for contextual grading
+    // Step 1: Use req.file.buffer directly for AI grading (memoryStorage - no re-download needed)
     let aiScore = null;
     try {
       const aiController = require('./aiController');
       if (aiController.gradeAssignmentPDF) {
         aiScore = await aiController.gradeAssignmentPDF(
-          req.file.path,
+          req.file.buffer,
           assignment.maxMarks || 10,
           assignment.questions || [],
           assignment.description || '',
@@ -332,18 +331,26 @@ exports.submitAssignmentPDF = async (req, res) => {
       console.error('AI grading failed:', aiErr.message);
     }
 
-    // Ensure we ALWAYS have a score "at that time"
-    const finalAiScore = (aiScore === null || aiScore === 0) 
-      ? Math.floor(Math.random() * (10 - 5 + 1) + 5) // Fallback random 5-10 marks
+    // Step 2: Upload buffer to GridFS and get file ID
+    const pdfFileId = await uploadToGridFS(
+      req.file.buffer,
+      `assignment-${Date.now()}-${req.file.originalname}`,
+      req.file.mimetype,
+      'assignments'
+    );
+
+    // Ensure we ALWAYS have a score
+    const finalAiScore = (aiScore === null || aiScore === 0)
+      ? Math.floor(Math.random() * (10 - 5 + 1) + 5)
       : aiScore;
 
     assignment.submissions.push({
       student: req.user.id,
       submittedAt: now,
       isLate,
-      pdfPath: req.file.filename,
+      pdfFileId,   // GridFS ObjectId
       aiScore: finalAiScore,
-      score: finalAiScore // Always give marks immediately
+      score: finalAiScore
     });
     await assignment.save();
 

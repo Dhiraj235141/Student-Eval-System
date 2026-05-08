@@ -2,11 +2,19 @@ import { useState, useEffect } from 'react';
 import { X, User, Mail, Hash, BookOpen, Key, Save, Camera, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, BACKEND_URL } from '../../context/AuthContext';
 
 export default function ProfilePanel({ open, onClose }) {
-  const { user, login } = useAuth();
+  const { user, updateUser } = useAuth();
   const [tab, setTab] = useState('profile'); // profile | password
+
+  // Resolve GridFS relative paths to full backend URLs
+  const getFileUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/api/files/')) return `${BACKEND_URL}${url}`;
+    return url;
+  };
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -79,9 +87,11 @@ export default function ProfilePanel({ open, onClose }) {
       const res = await axios.post('/auth/profile-image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setForm({...form, profileImage: res.data.profileImage});
-      toast.success('Image uploaded successfully!', { id: toastId });
-      // We will reload to sync immediately or the user can just push Save Changes
+      // Update local form state
+      setForm(prev => ({...prev, profileImage: res.data.profileImage}));
+      // Update AuthContext so sidebar avatar refreshes immediately
+      if (res.data.user) updateUser(res.data.user);
+      toast.success('Profile photo updated!', { id: toastId });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Upload failed', { id: toastId });
     }
@@ -118,7 +128,7 @@ export default function ProfilePanel({ open, onClose }) {
             <div className="relative">
               <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-white font-bold text-2xl overflow-hidden">
                 {user?.profileImage ? (
-                  <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={getFileUrl(user.profileImage)} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   user?.name?.charAt(0).toUpperCase()
                 )}

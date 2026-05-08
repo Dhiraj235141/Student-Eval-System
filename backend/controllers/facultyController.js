@@ -191,13 +191,24 @@ exports.updateSyllabus = async (req, res) => {
 exports.uploadSyllabusPDF = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No PDF uploaded' });
+
+    // Upload buffer from memoryStorage to GridFS
+    const { uploadToGridFS } = require('../utils/gridfsHelper');
+    const fileId = await uploadToGridFS(
+      req.file.buffer,
+      `syllabus-${Date.now()}-${req.file.originalname}`,
+      req.file.mimetype,
+      'syllabi'
+    );
+
     const subject = await Subject.findOneAndUpdate(
       { _id: req.params.id, faculty: req.user.id },
-      { syllabusFile: req.file.filename },
+      { syllabusFileId: fileId },
       { new: true }
     );
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
-    res.json({ success: true, subject, filename: req.file.filename });
+    const syllabusFileUrl = `/api/files/${fileId}`;
+    res.json({ success: true, subject, syllabusFileUrl });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -538,7 +549,7 @@ exports.getSubmissions = async (req, res) => {
         submittedAt: sub?.submittedAt,
         score: sub?.score,
         aiScore: sub?.aiScore,
-        pdfPath: sub?.pdfPath || null,
+        pdfUrl: sub?.pdfFileId ? `/api/files/${sub.pdfFileId}` : null,
       };
     });
 

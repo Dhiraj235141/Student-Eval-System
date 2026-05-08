@@ -203,13 +203,13 @@ export default function FacultyCreateTest() {
           </div>
 
           {/* Syllabus — single compact line */}
-          {selectedSubject && selectedSubjData && (selectedSubjData.syllabus || selectedSubjData.syllabusFile) && (
+          {selectedSubject && selectedSubjData && (selectedSubjData.syllabus || selectedSubjData.syllabusFileId) && (
             <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
               <BookOpen size={14} className="text-indigo-500 flex-shrink-0" />
               <span className="text-sm font-medium text-indigo-700 flex-1">Syllabus</span>
-              {selectedSubjData.syllabusFile && (
+              {selectedSubjData.syllabusFileId && (
                 <a
-                  href={`${BACKEND_URL}/uploads/syllabi/${selectedSubjData.syllabusFile}`}
+                  href={`${BACKEND_URL}/api/files/${selectedSubjData.syllabusFileId}`}
                   target="_blank" rel="noreferrer"
                   className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
                 >

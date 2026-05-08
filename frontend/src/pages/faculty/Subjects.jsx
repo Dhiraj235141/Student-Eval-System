@@ -62,8 +62,8 @@ export default function FacultySubjects() {
                 </div>
               </div>
               {/* Syllabus status */}
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.syllabusFile ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                {s.syllabusFile ? '✓ PDF uploaded' : 'No PDF'}
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.syllabusFileId ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                {s.syllabusFileId ? '✓ PDF uploaded' : 'No PDF'}
               </span>
             </div>
 
@@ -76,7 +76,7 @@ export default function FacultySubjects() {
               <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors border
                 ${uploadingId === s._id ? 'text-gray-400 border-gray-100 bg-gray-50' : 'text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}>
                 <Upload size={12} />
-                {uploadingId === s._id ? 'Uploading...' : s.syllabusFile ? 'Replace' : 'Upload'}
+                {uploadingId === s._id ? 'Uploading...' : s.syllabusFileId ? 'Replace' : 'Upload'}
                 <input
                   type="file" accept=".pdf" className="hidden"
                   disabled={uploadingId === s._id}
@@ -85,9 +85,9 @@ export default function FacultySubjects() {
               </label>
 
               {/* View PDF */}
-              {s.syllabusFile && (
+              {s.syllabusFileId && (
                 <a
-                  href={`${BACKEND_URL}/uploads/syllabi/${s.syllabusFile}`}
+                  href={`${BACKEND_URL}/api/files/${s.syllabusFileId}`}
                   target="_blank" rel="noreferrer"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
                 >

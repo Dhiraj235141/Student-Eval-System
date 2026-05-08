@@ -12,8 +12,8 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve files from GridFS (MongoDB)
+app.use('/api/files', require('./routes/fileRoutes'));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

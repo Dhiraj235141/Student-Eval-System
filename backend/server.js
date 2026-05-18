@@ -9,7 +9,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: "https://student-eval-system-3.onrender.com", credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // Serve files from GridFS (MongoDB)
